@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub PR Review"
+  short_description: "Review the current PR diff"
+  default_prompt: "Review the current open GitHub pull request diff with specialized sub-agents and report only actionable findings."
