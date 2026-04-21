@@ -19,12 +19,16 @@ Review GitHub pull requests as a findings-first code review. Resolve the active 
 
 1. Verify GitHub CLI access.
    - `gh auth status`
-2. Build the review bundle.
+2. Read repository instruction files before reviewing.
+   - Start with repo-root or nearest `AGENTS.md`, `CLAUDE.md`, and contribution docs.
+   - Treat repo-specific review requirements as hard constraints, not optional context.
+3. Build the review bundle.
    - `python "<skill-path>/scripts/prepare_pr_review.py" --repo "."`
+   - If `python` is unavailable in the environment, rerun with `python3`.
    - Add `--pr "<number-or-url>"` when the review target is not the current branch PR.
-3. Read `<bundle-dir>/summary.md`.
-4. Read [`references/review-lenses.md`](references/review-lenses.md).
-5. Launch only the recommended lenses from `lens-hints.json`, then merge their findings.
+4. Read `<bundle-dir>/summary.md`.
+5. Read [`references/review-lenses.md`](references/review-lenses.md).
+6. Launch only the recommended lenses from `lens-hints.json`, then merge their findings.
 
 ## Workflow
 
@@ -45,9 +49,15 @@ Prefer the script over repeated ad hoc `gh` commands so every sub-agent can poin
 
 Read `summary.md` first. Then read `lens-hints.json` and use `recommended_lenses` as the default sub-agent launch set. Each lens entry also includes `reason` and `focus_files`.
 
+Before delegating, read the repository instruction files that govern the target repo, such as `AGENTS.md`, `CLAUDE.md`, and repo contribution docs. Convert any review-specific repo rules into explicit checks or lens prompt addenda. Examples include required review language, required architecture-doc updates, testing conventions, and known high-risk stacks such as Supabase or Sentry.
+
 Do not launch every available lens by default. When the PR is small and clearly cross-cutting, you can still run all lenses. Otherwise, start with `recommended_lenses`, narrow each sub-agent to the most relevant file subset, and let it open extra source files only when needed for cross-file reasoning.
 
 Use `coverage_gaps` from `lens-hints.json` as a hard stop before finalizing. If any changed file is not covered by the recommended lenses, either assign it to another lens or read it directly as the coordinator. Do not finalize while unread changed files remain.
+
+For large or high-risk PRs, do not rely on sub-agent `Findings: none` outputs alone. If the PR changes more than roughly 20 files, or touches auth, route handlers, external network calls, migrations, access-control helpers, or tenant-scope logic, the coordinator must run a direct hotspot sanity pass before finalizing. At minimum, open the changed helpers or handlers that gate auth or scope, the changed files that make external requests, and the changed tests that should prove the new behavior.
+
+For small PRs, the coordinator's direct read of all changed files is sufficient to count as the sanity pass. You do not need a second separate hotspot sweep when the entire diff is already small enough to read directly.
 
 If the target repository has known high-risk conventions, state them explicitly in the sub-agent prompt. For example, call out Supabase RLS and policy regressions for the `security` lens, and call out Sentry coverage with `@sentry/nextjs` for the `performance-and-operations` lens.
 
@@ -62,6 +72,8 @@ Available lenses:
 - `tests`
 - `frontend-ux`
 - `api-contract`
+
+Use sub-agents only when the user explicitly asked for a PR review, asked for this skill, or otherwise gave clear permission for delegated review work. If delegation is unavailable in the current environment, perform the same lens-based reasoning yourself and mention the fallback only when it materially affected coverage or confidence.
 
 Use `spawn_agent` with `agent_type: "explorer"` unless you have a concrete reason to use another type. Pass the minimum context needed: the bundle directory, the review lens, and the output contract. Start with `recommended_lenses` and add more only if the diff or the user request calls for exhaustive review.
 
@@ -92,8 +104,12 @@ Final review requirements:
 
 - Findings first, ordered by severity.
 - Each finding must include `severity`, `path:line`, the concrete issue, and why it matters.
+- When a sub-agent reports a line range, normalize it to the first relevant line in the final merged review so every final finding still uses a single `path:line`.
+- `Findings: none` is allowed only when both the sub-agent outputs and the coordinator's direct hotspot sanity pass came back clean.
+- Treat a finding as actionable only when the diff-to-risk chain is concrete enough to explain a user-visible, security, correctness, contract, or operational consequence. Drop speculative concerns that cannot be tied back to the changed code.
 - Keep summary text brief and secondary.
 - If every agent returns `no findings`, say that explicitly and mention any residual risk such as large untouched areas or inability to run tests.
+- `Coverage` must be derived from the exact changed-file paths in `files.json`, not from broad area summaries. If any file was not read directly or through a lens owner, list that path under `Unread areas`.
 
 ### 5. Output contract
 
@@ -113,6 +129,13 @@ After `Coverage`, optionally add:
 
 - `Open questions`: only when something important is ambiguous.
 - `Residual risk`: only when the review could not cover an important area, such as opaque or binary files.
+
+Coverage formatting notes:
+
+- The final merged review does not need to print every reviewed path when the PR is large.
+- The coordinator must still reconcile exact paths against `files.json` while reviewing.
+- In the final response, `Reviewed files: N/N` plus explicit `Unread areas` paths is sufficient.
+- Patch-level reconciliation is acceptable for docs, generated files, lockfiles, and similar low-risk artifacts when the diff is human-readable and does not hide runtime behavior. Read the underlying source file directly when the patch alone is insufficient to judge behavior.
 
 ## Manual Fallback
 

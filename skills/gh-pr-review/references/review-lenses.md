@@ -9,6 +9,7 @@ Every review agent should:
 - Start with `summary.md`.
 - Inspect the relevant `patches/*.patch` files first, then open source files only when needed.
 - Read every file in its assigned scope. Do not leave unread files inside the assigned scope.
+- Report reviewed files as exact repository paths, not broad area labels.
 - Report only actionable findings.
 - Ignore formatting-only or purely stylistic nits.
 - Use severities `high`, `medium`, or `low`.

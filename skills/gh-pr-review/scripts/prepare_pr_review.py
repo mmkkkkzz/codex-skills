@@ -165,6 +165,9 @@ def is_api_contract_path(path: str) -> bool:
 
 def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
     changed_paths = [file["path"] for file in files]
+    root_level_paths = [
+        path for path in changed_paths if len(Path(path).parts) == 1
+    ]
     test_paths = [
         path
         for path in changed_paths
@@ -213,6 +216,7 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
     maintainability_focus = sorted(
         set(
             large_source_paths
+            + root_level_paths
             + select(lambda path: path.startswith(("components/", "lib/", "docs/")))
         )
     )
@@ -312,6 +316,7 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
         lenses["maintainability"]["reason"] = (
             "No code-heavy lens matched strongly, so run a lightweight maintainability pass."
         )
+        lenses["maintainability"]["focus_files"] = list(changed_paths)
 
     recommended_focus_files = {
         path
