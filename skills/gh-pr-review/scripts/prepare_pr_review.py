@@ -30,13 +30,17 @@ SOURCE_PREFIXES = ("app/", "components/", "lib/", "supabase/")
 TEST_PREFIX = "tests/"
 DOC_PREFIX = "docs/"
 AVAILABLE_LENSES = [
+    "access-control",
     "security",
+    "data-integrity",
     "correctness",
-    "maintainability",
-    "performance-and-operations",
-    "tests",
-    "frontend-ux",
+    "failure-modes",
     "api-contract",
+    "performance",
+    "observability-ops",
+    "frontend-ux",
+    "tests",
+    "maintainability",
 ]
 
 
@@ -163,6 +167,152 @@ def is_api_contract_path(path: str) -> bool:
     )
 
 
+def is_access_control_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        path.startswith("app/api/")
+        or path.startswith("supabase/")
+        or path.endswith(("middleware.ts", "middleware.tsx"))
+        or any(
+            token in lowered
+            for token in (
+                "auth",
+                "authorize",
+                "permission",
+                "policy",
+                "policies",
+                "role",
+                "roles",
+                "scope",
+                "tenant",
+                "facility",
+                "organization",
+                "session",
+                "cookie",
+                "csrf",
+                "origin",
+                "redirect",
+                "login",
+            )
+        )
+    )
+
+
+def is_security_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        path.endswith(("next.config.mjs", "next.config.js"))
+        or any(
+            token in lowered
+            for token in (
+                "secret",
+                "token",
+                "credential",
+                "crypto",
+                "password",
+                "webhook",
+                "upload",
+                "file",
+                "cors",
+                "ssrf",
+                "sanitize",
+                "redact",
+                "prompt",
+                "injection",
+            )
+        )
+    )
+
+
+def is_data_integrity_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        path.startswith("supabase/migrations/")
+        or path.startswith("supabase/seed")
+        or any(
+            token in lowered
+            for token in (
+                "migration",
+                "schema",
+                "backfill",
+                "archive",
+                "canonical",
+                "repository",
+                "transaction",
+                "rollback",
+                "upsert",
+                "dedupe",
+                "integrity",
+            )
+        )
+    )
+
+
+def is_failure_modes_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        path.startswith(("app/", "components/", "lib/"))
+        and not path.startswith((TEST_PREFIX, DOC_PREFIX))
+        and (
+            path.startswith("app/api/")
+            or path.endswith("route.ts")
+            or any(
+                token in lowered
+                for token in (
+                    "error",
+                    "fallback",
+                    "recovery",
+                    "retry",
+                    "timeout",
+                    "degraded",
+                    "partial",
+                    "audit",
+                    "lockout",
+                    "login",
+                    "fetch",
+                    "client",
+                    "server",
+                )
+            )
+        )
+    )
+
+
+def is_performance_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        (
+            path.startswith(("app/", "components/", "lib/"))
+            and not path.startswith(TEST_PREFIX)
+        )
+        or path.endswith("next.config.mjs")
+        or any(token in lowered for token in ("cache", "stream", "poll", "batch"))
+    )
+
+
+def is_observability_ops_path(path: str) -> bool:
+    lowered = path.lower()
+    return (
+        any(
+            token in lowered
+            for token in (
+                "sentry",
+                "logger",
+                "logging",
+                "log",
+                "audit",
+                "telemetry",
+                "trace",
+                "monitor",
+                "metrics",
+                "alert",
+            )
+        )
+        or path.startswith("app/api/")
+        or path.endswith("route.ts")
+    )
+
+
 def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
     changed_paths = [file["path"] for file in files]
     root_level_paths = [
@@ -204,15 +354,13 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     api_contract_paths = select(is_api_contract_path)
 
-    security_focus = select(
-        lambda path: path.startswith(("app/api/", "lib/", "supabase/"))
-        or "auth" in path
-        or "config" in path
-        or path.endswith(("route.ts", "middleware.ts", "next.config.mjs"))
-    )
+    access_control_focus = select(is_access_control_path)
+    security_focus = select(is_security_path)
+    data_integrity_focus = select(is_data_integrity_path)
     correctness_focus = select(
         lambda path: path.startswith(SOURCE_PREFIXES) and not path.startswith(DOC_PREFIX)
     )
+    failure_modes_focus = select(is_failure_modes_path)
     maintainability_focus = sorted(
         set(
             large_source_paths
@@ -220,71 +368,67 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
             + select(lambda path: path.startswith(("components/", "lib/", "docs/")))
         )
     )
-    performance_focus = select(
-        lambda path: (
-            (
-                path.startswith(("app/", "components/", "lib/"))
-                and not path.startswith(TEST_PREFIX)
-            )
-            or path.endswith("next.config.mjs")
-        )
-    )
+    performance_focus = select(is_performance_path)
+    observability_ops_focus = select(is_observability_ops_path)
     tests_without_matches = [path for path in source_paths if not matching_test_changed(path)]
 
-    security_recommended = any(
-        path.startswith(("app/api/", "supabase/"))
-        or any(
-            token in path.lower()
-            for token in (
-                "auth",
-                "policy",
-                "permission",
-                "access",
-                "storage",
-                "upload",
-                "middleware",
-                "role",
-                "config",
-            )
-        )
-        for path in changed_paths
-    )
+    access_control_recommended = bool(access_control_focus)
+    security_recommended = bool(security_focus)
+    data_integrity_recommended = bool(data_integrity_focus)
+    failure_modes_recommended = bool(failure_modes_focus)
     maintainability_recommended = (
         len(source_paths) >= 6
         or len(large_source_paths) >= 1
         or bool(select(lambda path: path.startswith(DOC_PREFIX)))
     )
-    performance_recommended = any(
-        path.startswith("app/")
-        or path.startswith("components/")
-        or any(
-            token in path.lower()
-            for token in ("client", "fetch", "recorder", "upload", "stream", "middleware")
-        )
-        or path.endswith(("route.ts", "next.config.mjs"))
-        for path in changed_paths
-    )
+    performance_recommended = bool(performance_focus)
+    observability_ops_recommended = bool(observability_ops_focus)
 
     lenses = {
+        "access-control": {
+            "recommended": access_control_recommended,
+            "reason": "Auth, authorization, session, route, policy, tenant, or object-scope boundaries changed.",
+            "focus_files": access_control_focus,
+        },
         "security": {
             "recommended": security_recommended,
-            "reason": "API, Supabase, auth, config, or access-control related paths changed.",
+            "reason": "Secret, injection, unsafe file/network, upload, webhook, or redaction-sensitive paths changed.",
             "focus_files": security_focus,
+        },
+        "data-integrity": {
+            "recommended": data_integrity_recommended,
+            "reason": "Migration, backfill, schema, repository, transaction, or canonical data paths changed.",
+            "focus_files": data_integrity_focus,
         },
         "correctness": {
             "recommended": bool(source_paths),
             "reason": "Production source files changed and core behavior may regress.",
             "focus_files": correctness_focus,
         },
-        "maintainability": {
-            "recommended": maintainability_recommended,
-            "reason": "The diff is large or cross-cutting enough to justify a maintainability pass.",
-            "focus_files": maintainability_focus,
+        "failure-modes": {
+            "recommended": failure_modes_recommended,
+            "reason": "Error handling, fallback, retry, partial failure, or dependency-failure behavior may change.",
+            "focus_files": failure_modes_focus,
         },
-        "performance-and-operations": {
+        "api-contract": {
+            "recommended": bool(api_contract_paths),
+            "reason": "API routes, schemas, clients, or API docs/tests changed.",
+            "focus_files": api_contract_paths,
+        },
+        "performance": {
             "recommended": performance_recommended,
-            "reason": "Runtime paths changed and operational concerns such as Sentry coverage may regress.",
+            "reason": "Runtime paths changed and request/render cost, caching, or repeated work may regress.",
             "focus_files": performance_focus,
+        },
+        "observability-ops": {
+            "recommended": observability_ops_recommended,
+            "reason": "Logging, Sentry, audit, telemetry, route, or production investigation paths changed.",
+            "focus_files": observability_ops_focus,
+        },
+        "frontend-ux": {
+            "recommended": bool(ui_paths),
+            "reason": "User-facing pages, components, or styles changed.",
+            "focus_files": ui_paths,
         },
         "tests": {
             "recommended": bool(source_paths or test_paths),
@@ -292,15 +436,10 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
             "focus_files": test_paths,
             "source_files_without_matching_changed_tests": tests_without_matches,
         },
-        "frontend-ux": {
-            "recommended": bool(ui_paths),
-            "reason": "User-facing pages, components, or styles changed.",
-            "focus_files": ui_paths,
-        },
-        "api-contract": {
-            "recommended": bool(api_contract_paths),
-            "reason": "API routes, schemas, clients, or API docs/tests changed.",
-            "focus_files": api_contract_paths,
+        "maintainability": {
+            "recommended": maintainability_recommended,
+            "reason": "The diff is large or cross-cutting enough to justify a maintainability pass.",
+            "focus_files": maintainability_focus,
         },
     }
 
@@ -334,7 +473,9 @@ def build_lens_hints(files: list[dict[str, Any]]) -> dict[str, Any]:
             "Launch only recommended_lenses by default.",
             "Add other lenses only when the diff is unusually cross-cutting or the user asks for exhaustive review.",
             "Before finalizing the review, make sure every changed file is covered by at least one lens or by direct coordinator review.",
-            "For UI-heavy diffs, pair frontend-ux with correctness. For API-heavy diffs, pair api-contract with security and tests.",
+            "For UI-heavy diffs, pair frontend-ux with correctness and failure-modes.",
+            "For API-heavy diffs, pair api-contract with access-control, failure-modes, and tests.",
+            "For destructive data changes, pair data-integrity with tests and observability-ops.",
         ],
         "coverage_gaps": coverage_gaps,
         "lenses": lenses,

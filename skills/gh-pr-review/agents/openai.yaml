@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub PR Review"
-  short_description: "Review the current PR diff"
-  default_prompt: "Review the current open GitHub pull request diff with specialized sub-agents and report only actionable findings."
+  short_description: "Review PRs with Claude and Codex lenses"
+  default_prompt: "Use $gh-pr-review to review the current open GitHub pull request with a bundle-first plan, Claude Code pr-review-toolkit output, specialized Codex review lenses, exact changed-file coverage reconciliation, and concrete high, medium, and low severity findings."
