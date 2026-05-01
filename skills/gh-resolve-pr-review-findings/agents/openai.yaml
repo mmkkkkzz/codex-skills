@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolve PR Review Findings"
+  short_description: "Root-fix PR review findings and push"
+  default_prompt: "Use $gh-resolve-pr-review-findings to ledger PR review feedback, root-fix actionable items, push, resolve handled GitHub threads, and re-check unresolved thread state."
