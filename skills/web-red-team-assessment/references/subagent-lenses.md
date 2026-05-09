@@ -19,7 +19,9 @@ Spawning a specialized attack-case subagent does not expand target scope beyond 
 ## When to Delegate
 
 - Use subagents only when the runtime supports delegation and the user explicitly asks for subagents, parallel assessment, or broad multi-lens coverage.
-- Do not delegate authenticated lenses before authorization, dedicated assessment worktree, local target URLs, disposable backing services, seed-derived credentials or explicit local credentials, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
+- The coordinator should create the assessment worktree, start the local dev server, discover the local URL, build the credential inventory, and assign default request/resource budgets before delegating.
+- Do not ask the user for values that can be discovered locally. If credentials or role boundaries cannot be found, delegate only unauthenticated/passive lenses and mark authenticated checks as blocked.
+- Do not delegate authenticated lenses before a dedicated assessment worktree, local target URL, disposable backing services, seed-derived credentials or explicit local credentials, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
 - If the target is staging, preview, production, shared, or public internet, stop and ask for a local disposable target instead.
 - Assign each subagent a request/resource budget plus a unique route, role, tenant/facility, or surface boundary to avoid duplicate probing and uncontrolled local load.
 - If subagents are unavailable, run the same lenses sequentially in the main thread.

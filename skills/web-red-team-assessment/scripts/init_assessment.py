@@ -44,6 +44,9 @@ def main() -> int:
     parser.add_argument("--source-repo", help="Primary repository path")
     parser.add_argument("--worktree", help="Dedicated assessment worktree path")
     parser.add_argument("--base-ref", help="Git ref used to create the assessment worktree")
+    parser.add_argument("--install-command", default="pnpm install", help="Dependency install command")
+    parser.add_argument("--dev-command", default="PORT=<free-local-port> pnpm run dev", help="Local dev server command")
+    parser.add_argument("--dev-session", default="TBD", help="Dev server process or session identifier")
     parser.add_argument(
         "--out-dir",
         default="security-assessments",
@@ -77,8 +80,9 @@ def main() -> int:
 - Base ref: {base_ref}
 - Local URL/port:
 - Env files copied:
-- Install command:
-- Dev server command:
+- Install command: {args.install_command}
+- Dev server command: {args.dev_command}
+- Dev server process/session: {args.dev_session}
 - Authorization owner:
 - Environment: local only
 - Test accounts and roles, redacted:
@@ -118,8 +122,9 @@ def main() -> int:
 - Created at: {now}
 - Local URL/port:
 - Env files copied:
-- Install command:
-- Dev server command:
+- Install command: {args.install_command}
+- Dev server command: {args.dev_command}
+- Dev server process/session: {args.dev_session}
 - Reset/cleanup command:
 - Remove worktree after assessment: yes / no / ask
 
@@ -129,6 +134,8 @@ def main() -> int:
 git status --short
 git worktree list
 git worktree add --detach ../<repo>-redteam-<date> HEAD
+pnpm install
+PORT=<free-local-port> pnpm run dev
 ```
 
 ## Notes
@@ -137,6 +144,7 @@ git worktree add --detach ../<repo>-redteam-<date> HEAD
 - Run assessment commands from the dedicated worktree.
 - Copy only local development env files needed for the disposable target.
 - Use a non-default local port if another checkout is active.
+- Start the dev server yourself; do not wait for the user to run it.
 - Do not commit assessment artifacts, credentials, local env files, or generated destructive-test residue.
 """,
     )

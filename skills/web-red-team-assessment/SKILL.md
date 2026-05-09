@@ -11,18 +11,18 @@ Run authorized web security assessments against local, disposable web targets on
 
 ## Scope Gate
 
-Before probing any target, establish enough local scope to keep the first action safe:
+Before probing any target, establish enough local scope to keep the first action safe. Do this by inspecting and setting up the local repo first; do not ask the user to provide values that can be discovered locally.
 
-- The user owns the target or has explicit authorization to test it.
+- If the user invokes this skill from a local repository, treat the local app in that repository as authorized for local-only assessment.
 - Target URLs and APIs are local-only: `localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host that does not route to staging, preview, production, or third-party systems.
 - A dedicated sibling git worktree is created or the current checkout is already a dedicated assessment worktree.
 - The app is running locally, and backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable or safely stubbed.
 - Accounts, roles, tenants, facilities, seed data, seed-derived login credentials, and reset/cleanup commands are known.
 - Request budgets, resource limits, and whether local stress/scanner runs are allowed.
-- Confirmation that destructive app-level operations are allowed only within this local disposable scope.
+- Destructive app-level operations are allowed only within this local disposable scope.
 - Confirmation that source/config/infrastructure changes and remediation are separate unless explicitly requested.
 
-If the target is not clearly local and disposable, stop before probing and ask only for the missing items. Do not inspect source code to compensate for missing black-box scope. Do not probe staging, preview, production, public internet targets, or third-party systems with this skill.
+If the target is not clearly local and disposable, try to create a local disposable target first. Stop only when the available configuration would hit staging, preview, production, public internet, third-party systems, real email/SMS/payment/webhooks, or other non-local side effects that cannot be stubbed. Do not inspect source code to compensate for missing black-box scope. Do not probe staging, preview, production, public internet targets, or third-party systems with this skill.
 
 ## Default Mode
 
@@ -46,11 +46,17 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
 ## First Response Rules
 
-- If the request lacks a target URL or authorization, answer with the missing scope checklist and do nothing else.
-- If the target is staging, preview, production, or public internet, decline to run this local-only skill and ask for a local disposable target instead.
+- Do not start by asking for target URL, worktree permission, dev-server permission, login accounts, roles, facilities, tenants, seed/reset steps, or scanner/fuzz/destructive permission when they can be discovered or safely defaulted locally.
+- If the request lacks a target URL, create/run the local app yourself and use the discovered local URL.
+- If no server is running, create or reuse the assessment worktree, install dependencies as needed, and run the dev server yourself. For pnpm projects, run `pnpm install` when needed and `PORT=<free-local-port> pnpm run dev`.
+- If authorization is not explicitly stated but the target is the current local repo/worktree, assume local assessment authorization.
+- If destructive operation permission is not explicitly stated, default to allowed for app-level operations inside the local disposable worktree/data only, with cleanup/reset notes.
+- If scanner/fuzz/replay/race/stress limits are not specified, use conservative local defaults and record the request/resource budget in the ledger.
+- If the target is explicitly staging, preview, production, or public internet, decline to run this local-only skill and ask for a local disposable target instead.
 - If the user provides credentials, do not repeat passwords, cookies, tokens, or personal data in the response or artifacts.
 - If the user asks for "fix and PR" together with assessment, state that the first deliverable is a confirmed-finding report, then remediation can begin as a separate implementation task.
 - If enough local disposable scope is available, begin with target mapping and then run destructive attack lenses within the assigned request/resource budgets.
+- If local discovery fails, continue with unauthenticated/passive lenses and report only the exact blocked authenticated/destructive checks.
 
 ## Workflow
 
@@ -71,7 +77,9 @@ If the target is not clearly local and disposable, stop before probing and ask o
    - Use the worktree path as the cwd for dependency install, local env setup, dev server, ledger generation, credential inventory, probing, scanner/fuzzer runs, and cleanup/reset.
    - Copy only local development env files that are needed to run the disposable target, such as `.env.local`, and keep them uncommitted.
    - Use non-default local ports when the primary checkout or another worktree may already be running.
-   - Record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, local URL, and cleanup command in the ledger.
+   - Discover the package manager and dev script from local files. For pnpm projects, prefer `pnpm install` and `PORT=<free-local-port> pnpm run dev` without asking the user.
+   - If `pnpm run dev` starts an interactive long-running server, keep it running in the worktree session until assessment finishes, then stop it during cleanup.
+   - Record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, local URL, process/session id if available, and cleanup command in the ledger.
 
 2. Create an assessment ledger inside the assessment worktree if persistent artifacts are useful:
 

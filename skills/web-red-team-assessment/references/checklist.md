@@ -4,10 +4,11 @@ Use this checklist to choose focused test lenses for local, disposable web targe
 
 ## Scope and Setup
 
-- Confirm authorization and that all target URLs are local-only (`localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host).
-- Confirm the assessment runs from a dedicated sibling worktree and record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, and local URL.
-- Identify roles, tenants, organizations, facilities, account states, and privilege boundaries.
-- Confirm backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable, stubbed, or resettable.
+- Treat the current local repo as authorized for local-only assessment unless the user explicitly points elsewhere.
+- Discover or create a local-only target URL (`localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host). If no server is running, start it from the assessment worktree.
+- Run from a dedicated sibling worktree and record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, process/session id if available, and local URL.
+- Identify roles, tenants, organizations, facilities, account states, and privilege boundaries from local seed/setup data and black-box app behavior.
+- Confirm or create disposable/stubbed local backing services, queues, storage, email/SMS/payment/webhook sinks, and test data where the repo supports it.
 - Build a local credential inventory from seed/fixture/demo/test-data files and record source file/line and confidence.
 - Pass seed-derived credentials only to subagents that need to log in; do not echo raw passwords in reports.
 - Record reset/cleanup commands before destructive tests.
