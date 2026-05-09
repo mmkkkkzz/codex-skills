@@ -44,6 +44,11 @@ def main() -> int:
     parser.add_argument("--source-repo", help="Primary repository path")
     parser.add_argument("--worktree", help="Dedicated assessment worktree path")
     parser.add_argument("--base-ref", help="Git ref used to create the assessment worktree")
+    parser.add_argument(
+        "--env-files-copied",
+        default="TBD",
+        help="Local env files copied into the assessment worktree, without secret values",
+    )
     parser.add_argument("--install-command", default="pnpm install", help="Dependency install command")
     parser.add_argument("--dev-command", default="PORT=<free-local-port> pnpm run dev", help="Local dev server command")
     parser.add_argument("--dev-session", default="TBD", help="Dev server process or session identifier")
@@ -79,7 +84,7 @@ def main() -> int:
 - Assessment worktree: {worktree}
 - Base ref: {base_ref}
 - Local URL/port:
-- Env files copied:
+- Env files copied: {args.env_files_copied}
 - Install command: {args.install_command}
 - Dev server command: {args.dev_command}
 - Dev server process/session: {args.dev_session}
@@ -121,7 +126,7 @@ def main() -> int:
 - Base ref: {base_ref}
 - Created at: {now}
 - Local URL/port:
-- Env files copied:
+- Env files copied: {args.env_files_copied}
 - Install command: {args.install_command}
 - Dev server command: {args.dev_command}
 - Dev server process/session: {args.dev_session}
@@ -134,6 +139,11 @@ def main() -> int:
 git status --short
 git worktree list
 git worktree add --detach ../<repo>-redteam-<date> HEAD
+SOURCE_REPO=<primary-repo>
+ASSESSMENT_WORKTREE=<sibling-worktree>
+if [ -f "$SOURCE_REPO/.env.local" ] && [ ! -f "$ASSESSMENT_WORKTREE/.env.local" ]; then
+  cp "$SOURCE_REPO/.env.local" "$ASSESSMENT_WORKTREE/.env.local"
+fi
 pnpm install
 PORT=<free-local-port> pnpm run dev
 ```
@@ -142,7 +152,8 @@ PORT=<free-local-port> pnpm run dev
 
 - Keep the primary checkout untouched.
 - Run assessment commands from the dedicated worktree.
-- Copy only local development env files needed for the disposable target.
+- Copy `.env.local` from the source repo when present and missing in the worktree before install/server startup.
+- Copy other local-only env files only when the repo requires them; never print env contents or copy production env files.
 - Use a non-default local port if another checkout is active.
 - Start the dev server yourself; do not wait for the user to run it.
 - Do not commit assessment artifacts, credentials, local env files, or generated destructive-test residue.

@@ -9,6 +9,7 @@ Use this structure for a durable report. Keep sensitive values redacted.
 - Assessment mode: local-only black-box destructive assessment
 - Authorization and scope:
 - Worktree: source repo, assessment path, base ref, local URL, dev server process/session:
+- Env files copied/status:
 - Local credential source summary, redacted:
 - Disposable services/data and reset path:
 - Overall result:

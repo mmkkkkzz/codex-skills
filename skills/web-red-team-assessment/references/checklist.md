@@ -7,6 +7,7 @@ Use this checklist to choose focused test lenses for local, disposable web targe
 - Treat the current local repo as authorized for local-only assessment unless the user explicitly points elsewhere.
 - Discover or create a local-only target URL (`localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host). If no server is running, start it from the assessment worktree.
 - Run from a dedicated sibling worktree and record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, process/session id if available, and local URL.
+- After creating or selecting the worktree, copy `.env.local` from the source repo into the worktree when the source file exists and the worktree file is missing. Copy `.env.development.local`, `.env.test.local`, or equivalent local-only files only if the repo requires them. Never print env contents or copy production env files.
 - Identify roles, tenants, organizations, facilities, account states, and privilege boundaries from local seed/setup data and black-box app behavior.
 - Confirm or create disposable/stubbed local backing services, queues, storage, email/SMS/payment/webhook sinks, and test data where the repo supports it.
 - Build a local credential inventory from seed/fixture/demo/test-data files and record source file/line and confidence.

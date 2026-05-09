@@ -74,8 +74,18 @@ If the target is not clearly local and disposable, try to create a local disposa
      git worktree add --detach ../<repo>-redteam-<date> HEAD
      ```
 
-   - Use the worktree path as the cwd for dependency install, local env setup, dev server, ledger generation, credential inventory, probing, scanner/fuzzer runs, and cleanup/reset.
-   - Copy only local development env files that are needed to run the disposable target, such as `.env.local`, and keep them uncommitted.
+   - Immediately after creating or choosing the worktree, copy local development env files needed to run the disposable target before dependency install or server startup. If the source repo has `.env.local` and the worktree does not, copy it:
+
+     ```bash
+     SOURCE_REPO=/absolute/path/to/source-repo
+     ASSESSMENT_WORKTREE=/absolute/path/to/sibling-worktree
+     if [ -f "$SOURCE_REPO/.env.local" ] && [ ! -f "$ASSESSMENT_WORKTREE/.env.local" ]; then
+       cp "$SOURCE_REPO/.env.local" "$ASSESSMENT_WORKTREE/.env.local"
+     fi
+     ```
+
+   - Also copy `.env.development.local`, `.env.test.local`, or equivalent local-only env files only when the repo's dev/test scripts require them. Do not copy production env files, cloud secrets, password-manager exports, or files from outside the local repo. Do not print env file contents.
+   - If a matching env file already exists in the worktree, leave it untouched unless replacing it is necessary to start the local disposable target; record the decision in the ledger. Keep copied env files uncommitted.
    - Use non-default local ports when the primary checkout or another worktree may already be running.
    - Discover the package manager and dev script from local files. For pnpm projects, prefer `pnpm install` and `PORT=<free-local-port> pnpm run dev` without asking the user.
    - If `pnpm run dev` starts an interactive long-running server, keep it running in the worktree session until assessment finishes, then stop it during cleanup.
@@ -84,7 +94,13 @@ If the target is not clearly local and disposable, try to create a local disposa
 2. Create an assessment ledger inside the assessment worktree if persistent artifacts are useful:
 
    ```bash
-   python3 /path/to/web-red-team-assessment/scripts/init_assessment.py --root . --target <slug> --base-url <url>
+   python3 /path/to/web-red-team-assessment/scripts/init_assessment.py \
+     --root . \
+     --target <slug> \
+     --base-url <url> \
+     --source-repo "$SOURCE_REPO" \
+     --worktree "$ASSESSMENT_WORKTREE" \
+     --env-files-copied ".env.local copied from source repo when present"
    ```
 
    Use the repo's established docs or planning location instead when one exists.
@@ -155,4 +171,4 @@ Use `references/report-template.md` when producing a formal report or durable re
 
 ## Repository Adaptation
 
-When working in `welbase_v2`, this skill applies only to a local running app backed by disposable local services or explicitly resettable seed data. Create a sibling assessment worktree first, copy `.env.local` only when needed, use a non-default local port if another checkout is active, and run the black-box/destructive assessment from that worktree. If the user later asks for remediation, start a separate implementation task and then follow the repo's normal branch, validation, commit, push, and PR conventions. After the assessment or remediation is complete, report the worktree path and whether it should be removed.
+When working in `welbase_v2`, this skill applies only to a local running app backed by disposable local services or explicitly resettable seed data. Create a sibling assessment worktree first, copy `.env.local` from the primary checkout into the worktree when present and missing, use a non-default local port if another checkout is active, and run the black-box/destructive assessment from that worktree. If the user later asks for remediation, start a separate implementation task and then follow the repo's normal branch, validation, commit, push, and PR conventions. After the assessment or remediation is complete, report the worktree path and whether it should be removed.
