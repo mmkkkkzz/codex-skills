@@ -6,7 +6,7 @@ Use this structure for a durable report. Keep sensitive values redacted.
 
 - Target:
 - Dates:
-- Assessment mode: black-box / authenticated / code-assisted / remediation
+- Assessment mode: black-box report-only
 - Authorization and scope:
 - Overall result:
 - Highest severity:
@@ -23,11 +23,11 @@ Use this structure for a durable report. Keep sensitive values redacted.
 - Evidence:
   - Request:
   - Response:
-  - Screenshot/log:
-  - Code reference:
-- Root cause:
-- Remediation:
-- Regression tests:
+  - Screenshot/HTTP transcript:
+  - External evidence reference:
+- Likely root cause from observed behavior:
+- Remediation recommendation:
+- Regression test recommendation:
 - Validation:
 - Residual risk:
 
@@ -49,15 +49,12 @@ List suspicious signals, blocked checks, missing credentials, or areas left unte
 | --- | --- | --- |
 |  |  |  |
 
-## Remediation Summary
+## Recommendations
 
-Use this section only when fixes were made.
-
-- Code changes:
-- Tests added:
-- Commands run:
-- Docs updated:
-- Commit/PR:
+- Priority order:
+- Suggested owner:
+- Suggested verification after remediation:
+- Notes:
 
 ## Appendix
 

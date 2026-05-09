@@ -72,12 +72,15 @@ def main() -> int:
 - In-scope data boundaries:
 - Out-of-scope systems:
 - Rate limits:
+- Assessment mode: black-box report-only
 - Destructive actions allowed: no, unless explicitly listed below
 - Explicitly allowed destructive actions:
 
 ## Rules of Engagement
 
 - Use only approved targets, accounts, and test data.
+- Use externally observable behavior only unless the user explicitly changes scope.
+- Do not modify code, configuration, data, infrastructure, branches, commits, PRs, or deployments during report-only work.
 - Redact secrets, tokens, cookies, and personal data from artifacts.
 - Stop before high-rate, destructive, third-party, or production-impacting tests unless explicitly approved.
 """,
@@ -117,9 +120,9 @@ def main() -> int:
 - Actors tested:
 - Impact:
 - Evidence:
-- Root cause:
-- Remediation:
-- Regression tests:
+- Likely root cause from observed behavior:
+- Remediation recommendation:
+- Regression test recommendation:
 - Validation:
 - Residual risk:
 

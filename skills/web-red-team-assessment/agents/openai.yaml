@@ -1,4 +1,4 @@
 interface:
   display_name: "Web Red Team Assessment"
-  short_description: "Authorized web pentest workflow"
-  default_prompt: "Use $web-red-team-assessment to run an authorized security assessment of this web app and report evidence-backed findings."
+  short_description: "Black-box report-only pentest"
+  default_prompt: "Use $web-red-team-assessment to run a black-box, report-only security assessment of this web app and report evidence-backed findings."

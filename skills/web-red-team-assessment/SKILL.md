@@ -1,13 +1,13 @@
 ---
 name: web-red-team-assessment
-description: Authorized web application penetration testing and red-team assessment workflow for user-owned or explicitly approved targets. Use when Codex is asked to run or plan a web pentest, red-team exercise, black-box security assessment, authenticated app security review, vulnerability discovery pass, exploitability validation, or root-cause hardening of a website/API, especially when evidence-backed findings, safe probing limits, remediation, tests, and a final security report are needed.
+description: Authorized black-box, report-only web application penetration testing and red-team assessment workflow for user-owned or explicitly approved targets. Use when Codex is asked to run or plan a black-box web pentest, red-team exercise, vulnerability discovery pass, or authenticated app security assessment where the expected output is evidence-backed vulnerability reporting, safe probing limits, and a final security report. Do not use for code modification or remediation unless the user explicitly changes scope.
 ---
 
 # Web Red Team Assessment
 
 ## Overview
 
-Run authorized web security assessments that combine black-box probing, optional code-aware validation, and root-cause remediation. Keep the work evidence-backed, scoped, and safe for the target environment.
+Run authorized web security assessments as black-box, report-only exercises by default. Keep the work evidence-backed, scoped, and safe, and report confirmed vulnerabilities without modifying code, configuration, data, or infrastructure unless the user explicitly changes scope.
 
 ## Scope Gate
 
@@ -17,9 +17,17 @@ Before probing any target, establish:
 - Target URLs, APIs, environments, branches, accounts, and tenant/facility boundaries.
 - Test window, rate limits, and whether the environment is local, staging, preview, or production.
 - Disallowed actions, especially destructive writes, payment actions, email/SMS sending, account lockouts, bulk exports, and stress testing.
-- Whether the user wants report-only work or root-cause fixes with tests, commits, push, PR, or review-thread resolution.
+- Confirmation that the task is report-only unless the user explicitly asks for a separate remediation pass.
 
 Ask a concise clarification if authorization, target scope, or destructive-action permission is unclear. Do not probe third-party systems outside the approved scope.
+
+## Default Mode
+
+- Treat every assessment as black-box unless the user explicitly asks for code-assisted review.
+- Do not inspect source code, database schema, infrastructure configuration, logs, or internal implementation details for vulnerability discovery during the assessment.
+- Use only externally observable behavior: browser flows, HTTP requests/responses, response headers, cookies, redirects, visible files, authenticated test accounts, and approved low-volume probing.
+- Produce a vulnerability report only. Do not edit files, change settings, create migrations, commit, push, open PRs, resolve review threads, or deploy fixes.
+- If the user asks for fixes after the report, treat remediation as a separate task with its own branch, validation, and implementation workflow.
 
 ## Safety Rules
 
@@ -28,7 +36,7 @@ Ask a concise clarification if authorization, target scope, or destructive-actio
 - Do not perform denial-of-service testing, high-rate scanning, stealth, persistence, malware, credential theft, secret exfiltration, phishing, or attempts to bypass monitoring.
 - Do not expose real secrets, personal data, session cookies, or tokens in reports. Redact sensitive values in command output and screenshots.
 - If a test could affect other users, billing, email/SMS, destructive state, or data integrity, stop and request explicit permission.
-- If the user asks for remediation, fix root causes rather than hiding symptoms; add regression tests for confirmed issues.
+- Do not turn report-only work into remediation, refactoring, hardening, or test writing without a new explicit instruction.
 
 ## Workflow
 
@@ -42,29 +50,24 @@ Ask a concise clarification if authorization, target scope, or destructive-actio
 
 2. Build a target map:
    - Record base URLs, auth roles, test accounts, tenant IDs, and expected access boundaries.
-   - Enumerate visible routes, API endpoints, forms, file upload/download surfaces, auth/session flows, and state-changing actions.
-   - For local apps, run the app normally and inspect browser network traffic, route handlers, middleware, and server logs as allowed.
+   - Enumerate externally visible routes, API endpoints, forms, file upload/download surfaces, auth/session flows, and state-changing actions.
+   - For local apps, run the app normally and inspect browser behavior, network traffic, requests, responses, storage, cookies, and redirects.
 
-3. Probe black-box first:
+3. Probe black-box:
    - Inspect security headers, cookies, redirects, CORS behavior, cache behavior, and error responses.
    - Exercise authenticated and unauthenticated flows with low-volume requests.
    - Verify access-control boundaries by switching roles/tenants and changing identifiers only inside test data.
    - Record reproducible evidence: request path, method, role, relevant headers, status, response shape, screenshot path, and log excerpt.
 
-4. Use code-aware validation when source is available:
-   - Trace each suspected issue to route handlers, middleware, server actions, database policies, validators, and storage rules.
-   - Confirm whether the black-box signal is a real vulnerability, a configuration gap, or a false positive.
-   - Do not report speculative issues as findings without evidence.
+4. Validate from the outside:
+   - Reproduce each suspected issue with the minimum safe request sequence.
+   - Compare expected and actual behavior using only approved roles, accounts, tenants, and test data.
+   - Classify scanner output and suspicious behavior as leads until confirmed by external evidence.
+   - Do not report speculative issues as confirmed findings.
 
-5. Remediate if requested:
-   - Patch the trust boundary closest to the source of the bug.
-   - Add focused regression tests for the vulnerable path and at least one negative case.
-   - Update architecture/security docs when behavior, routes, schemas, or operational guidance changes.
-   - Run the repo's strongest relevant validation gate. For database/schema changes, include generated-type checks when the repo uses generated types.
-
-6. Report clearly:
+5. Report clearly:
    - Findings first, ordered by severity.
-   - Include severity, affected asset, evidence, impact, root cause, remediation, validation, and residual risk.
+   - Include severity, affected asset, evidence, impact, likely root cause if inferable from behavior, remediation recommendation, validation, and residual risk.
    - Separate confirmed findings from hypotheses, blocked checks, and clean passes.
    - If no genuine issue is found, say so and list meaningful residual risk or untested scope.
 
@@ -76,11 +79,11 @@ Use `references/report-template.md` when producing a formal report or durable re
 
 ## Tooling Guidance
 
-- Prefer browser automation, `curl`, app logs, test accounts, focused unit/integration tests, and the repo's existing tooling.
+- Prefer browser automation, `curl`, approved test accounts, and low-volume HTTP probing.
 - Use scanners only when the target is scoped, rate-limited, and safe for automated traffic. Start with passive or baseline modes.
 - Keep scanner output as evidence, not as final findings. Manually verify impact and root cause before reporting.
-- For GitHub PR or branch workflows, follow the repo's existing branch, validation, commit, push, and PR conventions.
+- Avoid GitHub PR, branch, commit, push, deployment, and code-edit workflows in report-only mode.
 
 ## Repository Adaptation
 
-When working in `welbase_v2`, default to a sibling worktree from `develop` for broad security work if the main checkout has unrelated changes. For fixes, prefer the existing trusted-origin guards, fail-close database policies/RPC behavior, route-handler validation, and the strongest local gate documented by the repo, usually `pnpm run check` or `pnpm run check:final` when Supabase types or migrations are touched.
+When working in `welbase_v2`, black-box report-only mode should start from the running app and externally observable behavior. Do not create a branch or sibling worktree just to produce the report. If the user later asks for remediation, start a separate implementation task and then follow the repo's normal branch, validation, commit, push, and PR conventions.

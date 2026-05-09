@@ -11,7 +11,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 
 ## Reconnaissance
 
-- Map public pages, authenticated pages, API endpoints, route handlers, server actions, static assets, redirects, and downloads.
+- Map public pages, authenticated pages, externally reachable API endpoints, static assets, redirects, and downloads.
 - Inspect response headers, cookie attributes, cache headers, CORS, CSP, HSTS, frame protections, and framework disclosure.
 - Check robots/sitemap only for route discovery; do not treat listed paths as authorization.
 - Compare app behavior across unauthenticated, low-privilege, admin, and cross-tenant actors.
@@ -34,7 +34,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 
 ## State-Changing Requests
 
-- Identify POST, PUT, PATCH, DELETE, server actions, RPC calls, and logout-like state changes.
+- Identify POST, PUT, PATCH, DELETE, externally triggered actions, RPC-like calls, and logout-like state changes.
 - Check trusted-origin, CSRF, idempotency, and replay behavior.
 - Verify content-type, body size, schema validation, and unexpected field rejection.
 - Confirm audit logging for high-risk writes and administrative actions.
