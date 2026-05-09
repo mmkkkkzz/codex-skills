@@ -15,6 +15,7 @@ Before probing any target, establish enough local scope to keep the first action
 
 - The user owns the target or has explicit authorization to test it.
 - Target URLs and APIs are local-only: `localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host that does not route to staging, preview, production, or third-party systems.
+- A dedicated sibling git worktree is created or the current checkout is already a dedicated assessment worktree.
 - The app is running locally, and backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable or safely stubbed.
 - Accounts, roles, tenants, facilities, seed data, seed-derived login credentials, and reset/cleanup commands are known.
 - Request budgets, resource limits, and whether local stress/scanner runs are allowed.
@@ -26,6 +27,7 @@ If the target is not clearly local and disposable, stop before probing and ask o
 ## Default Mode
 
 - Treat every assessment as black-box unless the user explicitly asks for code-assisted review.
+- Run the local target from a dedicated sibling worktree by default. Keep the primary checkout untouched, especially when it has unrelated changes.
 - Do not inspect source code, database schema, infrastructure configuration, logs, or internal implementation details for vulnerability discovery during the assessment.
 - Exception: during local setup, inspect seed/fixture/demo/test-data files only to discover disposable login credentials, roles, tenants, facilities, and reset data needed for authentication and subagent assignment. Do not use source internals as vulnerability evidence.
 - Use externally observable behavior: browser flows, HTTP requests/responses, response headers, cookies, redirects, visible files, authenticated test accounts, approved scanners, and local destructive app actions.
@@ -52,7 +54,26 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
 ## Workflow
 
-1. Create an assessment ledger if persistent artifacts are useful:
+1. Create or verify a dedicated assessment worktree before setup:
+   - From the primary repo, inspect state first:
+
+     ```bash
+     git status --short
+     git worktree list
+     ```
+
+   - If the current checkout is not already dedicated to this assessment, create a sibling detached worktree from the intended local test revision:
+
+     ```bash
+     git worktree add --detach ../<repo>-redteam-<date> HEAD
+     ```
+
+   - Use the worktree path as the cwd for dependency install, local env setup, dev server, ledger generation, credential inventory, probing, scanner/fuzzer runs, and cleanup/reset.
+   - Copy only local development env files that are needed to run the disposable target, such as `.env.local`, and keep them uncommitted.
+   - Use non-default local ports when the primary checkout or another worktree may already be running.
+   - Record the source repo path, worktree path, base ref, env-copy status, install command, dev server command, local URL, and cleanup command in the ledger.
+
+2. Create an assessment ledger inside the assessment worktree if persistent artifacts are useful:
 
    ```bash
    python3 /path/to/web-red-team-assessment/scripts/init_assessment.py --root . --target <slug> --base-url <url>
@@ -60,7 +81,7 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
    Use the repo's established docs or planning location instead when one exists.
 
-2. Build a local credential inventory before spawning authenticated subagents:
+3. Build a local credential inventory before spawning authenticated subagents:
    - The coordinator owns this setup step. It may inspect local seed, fixture, demo, factory, e2e, test-data, setup docs, and local test helpers to determine which disposable accounts exist and how to log in.
    - Use the bundled helper as an optional first pass, not as the only source of truth:
 
@@ -74,13 +95,13 @@ If the target is not clearly local and disposable, stop before probing and ask o
    - Treat `credentials.md` as a sensitive local artifact: do not commit it, do not paste full passwords into final reports, and do not pass credentials to subagents that do not need authentication.
    - When delegating, pass each subagent only the specific local login needed for its lens and instruct it not to echo passwords, cookies, tokens, or session identifiers.
 
-3. Build a target map:
+4. Build a target map:
    - Record base URLs, auth roles, test accounts, tenant IDs, and expected access boundaries.
    - Enumerate externally visible routes, API endpoints, forms, file upload/download surfaces, auth/session flows, and state-changing actions.
    - For local apps, run the app normally and inspect browser behavior, network traffic, requests, responses, storage, cookies, and redirects.
    - Record reset/cleanup commands before destructive testing begins.
 
-4. Use specialized attack-lens subagents when delegation is available, the user explicitly asked for subagents or parallel assessment, and scope is clear enough to probe safely:
+5. Use specialized attack-lens subagents when delegation is available, the user explicitly asked for subagents or parallel assessment, and scope is clear enough to probe safely:
    - Read `references/subagent-lenses.md` before delegating.
    - Spawning a specialized attack-case subagent does not expand target scope or allow third-party/prod impact; every subagent inherits the same local-only disposable safety boundary.
    - Keep the main agent as coordinator for scope, safety stops, target map, evidence naming, and final severity decisions.
@@ -89,21 +110,21 @@ If the target is not clearly local and disposable, stop before probing and ask o
    - Do not give subagents broad permission to inspect source code, alter non-app resources, exfiltrate real secrets, probe third parties, or start remediation.
    - Merge subagent reports as leads first; only confirmed, externally reproducible issues become findings.
 
-5. Probe black-box:
+6. Probe black-box:
    - Inspect security headers, cookies, redirects, CORS behavior, cache behavior, and error responses.
    - Exercise authenticated and unauthenticated flows, including destructive flows, inside local disposable test data.
    - Verify access-control boundaries by switching roles/tenants and changing identifiers only inside local test data.
    - Run approved local scanner, fuzz, replay, lockout, race, export, and stress checks within the request/resource budget.
    - Record reproducible evidence: request path, method, role, relevant headers, status, response shape, screenshot path, and log excerpt.
 
-6. Validate from the outside:
+7. Validate from the outside:
    - Reproduce each suspected issue with the minimum safe request sequence.
    - Compare expected and actual behavior using only approved local roles, accounts, tenants, and test data.
    - Classify scanner output and suspicious behavior as leads until confirmed by external evidence.
    - Do not report speculative issues as confirmed findings.
    - Run or document cleanup/reset after destructive checks.
 
-7. Report clearly:
+8. Report clearly:
    - Findings first, ordered by severity.
    - Include severity, affected asset, evidence, impact, likely root cause if inferable from behavior, remediation recommendation, validation, and residual risk.
    - Separate confirmed findings from hypotheses, blocked checks, and clean passes.
@@ -126,4 +147,4 @@ Use `references/report-template.md` when producing a formal report or durable re
 
 ## Repository Adaptation
 
-When working in `welbase_v2`, this skill applies only to a local running app backed by disposable local services or explicitly resettable seed data. Start from externally observable behavior, record reset/cleanup commands, and do not create a branch or sibling worktree just to produce the report. If the user later asks for remediation, start a separate implementation task and then follow the repo's normal branch, validation, commit, push, and PR conventions.
+When working in `welbase_v2`, this skill applies only to a local running app backed by disposable local services or explicitly resettable seed data. Create a sibling assessment worktree first, copy `.env.local` only when needed, use a non-default local port if another checkout is active, and run the black-box/destructive assessment from that worktree. If the user later asks for remediation, start a separate implementation task and then follow the repo's normal branch, validation, commit, push, and PR conventions. After the assessment or remediation is complete, report the worktree path and whether it should be removed.

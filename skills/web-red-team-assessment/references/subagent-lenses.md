@@ -1,6 +1,6 @@
 # Attack-Lens Subagents
 
-Use this reference only after the local-only scope gate is satisfied enough for safe probing. The main agent remains the coordinator for scope, safety stops, target mapping, evidence naming, deduplication, cleanup/reset, and final severity decisions.
+Use this reference only after the local-only scope gate is satisfied enough for safe probing. The main agent remains the coordinator for worktree isolation, scope, safety stops, target mapping, evidence naming, deduplication, cleanup/reset, and final severity decisions.
 
 All subagents must stay black-box and inside approved local accounts, roles, tenants, facilities, data, and URLs. Local destructive app-level actions are allowed only when the assigned lens includes a request/resource budget and cleanup/reset path. Do not ask subagents to inspect source code, change configuration, create commits, open PRs, exfiltrate real secrets, harvest real credentials, phish, persist, damage the host, or probe third parties.
 
@@ -19,7 +19,7 @@ Spawning a specialized attack-case subagent does not expand target scope beyond 
 ## When to Delegate
 
 - Use subagents only when the runtime supports delegation and the user explicitly asks for subagents, parallel assessment, or broad multi-lens coverage.
-- Do not delegate authenticated lenses before authorization, local target URLs, disposable backing services, seed-derived credentials or explicit local credentials, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
+- Do not delegate authenticated lenses before authorization, dedicated assessment worktree, local target URLs, disposable backing services, seed-derived credentials or explicit local credentials, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
 - If the target is staging, preview, production, shared, or public internet, stop and ask for a local disposable target instead.
 - Assign each subagent a request/resource budget plus a unique route, role, tenant/facility, or surface boundary to avoid duplicate probing and uncontrolled local load.
 - If subagents are unavailable, run the same lenses sequentially in the main thread.
@@ -49,6 +49,7 @@ Give each subagent only the scope it needs:
 You are an attack-lens specialist for an authorized local-only black-box destructive web assessment.
 
 Scope:
+- Assessment worktree path:
 - Target URLs:
 - Environment:
 - Approved accounts/roles/tenants/facilities:

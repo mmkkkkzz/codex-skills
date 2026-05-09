@@ -41,6 +41,9 @@ def main() -> int:
         default=[],
         help="In-scope base URL. Repeat for multiple URLs.",
     )
+    parser.add_argument("--source-repo", help="Primary repository path")
+    parser.add_argument("--worktree", help="Dedicated assessment worktree path")
+    parser.add_argument("--base-ref", help="Git ref used to create the assessment worktree")
     parser.add_argument(
         "--out-dir",
         default="security-assessments",
@@ -56,6 +59,9 @@ def main() -> int:
     evidence_dir.mkdir(parents=True, exist_ok=True)
 
     base_urls = "\n".join(f"- {url}" for url in args.base_url) or "- TBD"
+    source_repo = args.source_repo or "TBD"
+    worktree = args.worktree or str(root)
+    base_ref = args.base_ref or "TBD"
     now = dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
     write_file(
@@ -66,6 +72,13 @@ def main() -> int:
 - Target: {args.target}
 - Base URLs:
 {base_urls}
+- Source repo: {source_repo}
+- Assessment worktree: {worktree}
+- Base ref: {base_ref}
+- Local URL/port:
+- Env files copied:
+- Install command:
+- Dev server command:
 - Authorization owner:
 - Environment: local only
 - Test accounts and roles, redacted:
@@ -84,6 +97,7 @@ def main() -> int:
 
 ## Rules of Engagement
 
+- Run setup, local server, probing, scanner/fuzzer commands, and artifact writes from the assessment worktree.
 - Use only local approved targets, accounts, and disposable test data.
 - Use seed-derived credentials only for local authentication and pass them only to subagents that need them.
 - Use externally observable behavior only unless the user explicitly changes scope.
@@ -91,6 +105,39 @@ def main() -> int:
 - Destructive app-level actions are allowed only inside the local disposable target and must be followed by cleanup/reset notes.
 - Redact secrets, tokens, cookies, and personal data from artifacts.
 - Stop before any staging, preview, production, public internet, third-party, host-damaging, real-secret, phishing, malware, or persistence test.
+""",
+    )
+
+    write_file(
+        assessment_dir / "worktree.md",
+        f"""# Worktree Isolation
+
+- Source repo: {source_repo}
+- Assessment worktree: {worktree}
+- Base ref: {base_ref}
+- Created at: {now}
+- Local URL/port:
+- Env files copied:
+- Install command:
+- Dev server command:
+- Reset/cleanup command:
+- Remove worktree after assessment: yes / no / ask
+
+## Setup Checklist
+
+```bash
+git status --short
+git worktree list
+git worktree add --detach ../<repo>-redteam-<date> HEAD
+```
+
+## Notes
+
+- Keep the primary checkout untouched.
+- Run assessment commands from the dedicated worktree.
+- Copy only local development env files needed for the disposable target.
+- Use a non-default local port if another checkout is active.
+- Do not commit assessment artifacts, credentials, local env files, or generated destructive-test residue.
 """,
     )
 

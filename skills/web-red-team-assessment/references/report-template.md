@@ -8,6 +8,7 @@ Use this structure for a durable report. Keep sensitive values redacted.
 - Dates:
 - Assessment mode: local-only black-box destructive assessment
 - Authorization and scope:
+- Worktree: source repo, assessment path, base ref, local URL:
 - Local credential source summary, redacted:
 - Disposable services/data and reset path:
 - Overall result:
@@ -62,6 +63,7 @@ List suspicious signals, blocked checks, missing credentials, or areas left unte
 ## Appendix
 
 - Scope details:
+- Worktree details:
 - Test accounts and roles, redacted:
 - Credential inventory path:
 - Tool versions:
