@@ -1,0 +1,95 @@
+# Web Security Assessment Checklist
+
+Use this checklist to choose focused test lenses. Do not run every check mechanically; pick the surfaces that exist in the target and record skipped or blocked areas.
+
+## Scope and Setup
+
+- Confirm authorization, target URLs, in-scope environments, and out-of-scope third parties.
+- Identify roles, tenants, organizations, facilities, account states, and privilege boundaries.
+- Use disposable accounts and test data. Redact tokens, cookies, personal data, and secrets.
+- Capture evidence with request method/path, actor, expected result, actual result, and timestamp.
+
+## Reconnaissance
+
+- Map public pages, authenticated pages, API endpoints, route handlers, server actions, static assets, redirects, and downloads.
+- Inspect response headers, cookie attributes, cache headers, CORS, CSP, HSTS, frame protections, and framework disclosure.
+- Check robots/sitemap only for route discovery; do not treat listed paths as authorization.
+- Compare app behavior across unauthenticated, low-privilege, admin, and cross-tenant actors.
+
+## Authentication and Session
+
+- Check login, logout, password reset, invite, magic link, OAuth/callback, and session refresh flows.
+- Verify cookie flags: `HttpOnly`, `Secure`, `SameSite`, expiry, and domain/path scope.
+- Confirm logout invalidates or stops using the relevant session state.
+- Test account lockout and rate-limit behavior only within the agreed safe limits.
+- Look for user enumeration in errors, timing, status codes, and reset flows.
+
+## Authorization and Multi-Tenant Isolation
+
+- Treat IDOR and broken object-level authorization as first-class lenses.
+- Change path params, query params, JSON IDs, tenant IDs, facility IDs, organization IDs, storage object IDs, and report IDs using only test data.
+- Confirm server-side authorization, not just hidden buttons or client filters.
+- Check list, detail, create, update, delete, export, import, re-download, and background-job paths separately.
+- Verify fail-closed behavior for missing, null, malformed, or cross-tenant identifiers.
+
+## State-Changing Requests
+
+- Identify POST, PUT, PATCH, DELETE, server actions, RPC calls, and logout-like state changes.
+- Check trusted-origin, CSRF, idempotency, and replay behavior.
+- Verify content-type, body size, schema validation, and unexpected field rejection.
+- Confirm audit logging for high-risk writes and administrative actions.
+
+## Input and Injection
+
+- Test validation boundaries for strings, numbers, dates, enums, UUIDs, arrays, nested objects, file names, and CSV fields.
+- Check SQL/NoSQL/query-builder injection risks at server and RPC boundaries.
+- Check command, template, path traversal, LDAP, mail header, CSV formula, and log injection only where the matching sink exists.
+- Use harmless marker payloads and confirm whether input is rejected, escaped, or stored safely.
+
+## XSS and Client-Side Issues
+
+- Check reflected, stored, and DOM XSS surfaces: names, notes, rich text, markdown, query params, imported files, and error messages.
+- Verify escaping in tables, cards, toasts, modals, PDFs, CSV/Excel exports, and emails.
+- Check `dangerouslySetInnerHTML`, HTML parsers, markdown renderers, URL rendering, and link targets.
+- Validate CSP as a defense-in-depth control, not as the only fix.
+
+## SSRF, Redirects, and External Fetching
+
+- Inspect callbacks, webhooks, URL previews, import-from-URL features, image fetching, redirects, and file proxy endpoints.
+- Verify allowlists and scheme restrictions for server-side fetches.
+- Check open redirect behavior on `next`, `redirect`, `returnTo`, and callback parameters.
+- Do not attempt cloud metadata access or third-party callbacks unless explicitly approved and isolated.
+
+## File Handling, Reports, and Storage
+
+- Check upload type validation, size limits, extension/MIME mismatch, image processing, archive handling, malware scanning expectations, and storage ACLs.
+- Verify download authorization and signed URL lifetime.
+- Check report generation, re-download, CSV/PDF exports, cached artifacts, and background jobs for cross-tenant access.
+- Confirm generated files do not include hidden columns, raw IDs, secrets, or data from another tenant.
+
+## Headers, Browser Isolation, and Caching
+
+- Inspect `Cache-Control` on authenticated pages and API responses.
+- Check CSP, HSTS, `X-Frame-Options` or `frame-ancestors`, `Referrer-Policy`, `Permissions-Policy`, and MIME sniffing protections.
+- Verify CORS is not wildcarded for credentialed endpoints.
+- Check service workers, static assets, and CDN/proxy caching for authenticated content leaks.
+
+## Secrets and Supply Chain
+
+- Search for committed secrets, exposed environment variables, debug endpoints, source maps, logs, and build artifacts.
+- Check client bundles for server-only configuration or privileged URLs.
+- Run the repo's dependency audit commands when available.
+- Treat scanner findings as leads until manually confirmed in the app context.
+
+## Business Logic and Abuse Resistance
+
+- Check workflow sequencing, approval bypass, duplicate submission, race-prone actions, quota bypass, and role transitions.
+- Validate trial, billing, invitation, facility selection, user assignment, report closing/reopening, and irreversible operation rules when present.
+- Confirm high-impact actions have authorization, validation, auditability, and rollback/error handling.
+
+## Reporting Discipline
+
+- Report only confirmed issues as findings.
+- Label unverified items as hypotheses or blocked checks.
+- Include exact reproduction steps that use approved accounts and test data.
+- Include a minimal fix direction and a regression-test recommendation for every finding.
