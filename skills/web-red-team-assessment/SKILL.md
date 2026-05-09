@@ -11,15 +11,16 @@ Run authorized web security assessments as black-box, report-only exercises by d
 
 ## Scope Gate
 
-Before probing any target, establish:
+Before probing any target, establish enough scope to keep the first action safe:
 
 - The user owns the target or has explicit authorization to test it.
 - Target URLs, APIs, environments, branches, accounts, and tenant/facility boundaries.
 - Test window, rate limits, and whether the environment is local, staging, preview, or production.
 - Disallowed actions, especially destructive writes, payment actions, email/SMS sending, account lockouts, bulk exports, and stress testing.
 - Confirmation that the task is report-only unless the user explicitly asks for a separate remediation pass.
+- For local apps, whether the app is running, which backing services are disposable, and which seed/test data may be changed.
 
-Ask a concise clarification if authorization, target scope, or destructive-action permission is unclear. Do not probe third-party systems outside the approved scope.
+If authorization, target scope, or destructive-action permission is unclear, stop before probing and ask only for the missing items. Do not inspect source code to compensate for missing black-box scope. Do not probe third-party systems outside the approved scope.
 
 ## Default Mode
 
@@ -27,7 +28,7 @@ Ask a concise clarification if authorization, target scope, or destructive-actio
 - Do not inspect source code, database schema, infrastructure configuration, logs, or internal implementation details for vulnerability discovery during the assessment.
 - Use only externally observable behavior: browser flows, HTTP requests/responses, response headers, cookies, redirects, visible files, authenticated test accounts, and approved low-volume probing.
 - Produce a vulnerability report only. Do not edit files, change settings, create migrations, commit, push, open PRs, resolve review threads, or deploy fixes.
-- If the user asks for fixes after the report, treat remediation as a separate task with its own branch, validation, and implementation workflow.
+- If the user combines assessment and fixes in one request, run the black-box report first and defer code changes until confirmed findings exist and the user explicitly starts the remediation pass.
 
 ## Safety Rules
 
@@ -37,6 +38,14 @@ Ask a concise clarification if authorization, target scope, or destructive-actio
 - Do not expose real secrets, personal data, session cookies, or tokens in reports. Redact sensitive values in command output and screenshots.
 - If a test could affect other users, billing, email/SMS, destructive state, or data integrity, stop and request explicit permission.
 - Do not turn report-only work into remediation, refactoring, hardening, or test writing without a new explicit instruction.
+
+## First Response Rules
+
+- If the request lacks a target URL or authorization, answer with the missing scope checklist and do nothing else.
+- If the target is production, default to read-only, low-rate checks and ask before scanners, exports, writes, account-lockout tests, or bulk enumeration.
+- If the user provides credentials, do not repeat passwords, cookies, tokens, or personal data in the response or artifacts.
+- If the user asks for "fix and PR" together with assessment, state that the first deliverable is a confirmed-finding report, then remediation can begin as a separate implementation task.
+- If enough local/staging scope is available, begin with target mapping and passive/low-volume checks; postpone state-changing flows until tenant, facility, data, and side-effect boundaries are explicit.
 
 ## Workflow
 

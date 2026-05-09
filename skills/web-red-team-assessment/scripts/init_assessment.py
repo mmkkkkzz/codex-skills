@@ -70,9 +70,11 @@ def main() -> int:
 - Environment: local / staging / preview / production
 - Test accounts and roles, redacted:
 - In-scope data boundaries:
+- Disposable local/staging data:
 - Out-of-scope systems:
 - Rate limits:
 - Assessment mode: black-box report-only
+- Remediation requested now: no, defer until confirmed findings are reported
 - Destructive actions allowed: no, unless explicitly listed below
 - Explicitly allowed destructive actions:
 
