@@ -62,19 +62,28 @@ If authorization, target scope, or destructive-action permission is unclear, sto
    - Enumerate externally visible routes, API endpoints, forms, file upload/download surfaces, auth/session flows, and state-changing actions.
    - For local apps, run the app normally and inspect browser behavior, network traffic, requests, responses, storage, cookies, and redirects.
 
-3. Probe black-box:
+3. Use specialized attack-lens subagents when delegation is available, the user explicitly asked for subagents or parallel assessment, and scope is clear enough to probe safely:
+   - Read `references/subagent-lenses.md` before delegating.
+   - Spawning a specialized attack-case subagent does not expand scope, permission, rate limits, or allowed techniques; every subagent inherits the same black-box, report-only, low-volume safety boundary unless the user explicitly grants a narrower or different permission.
+   - Keep the main agent as coordinator for scope, safety stops, target map, evidence naming, and final severity decisions.
+   - Give each subagent one lens, the approved scope, explicit prohibited actions, allowed accounts/roles/tenants, request budget, unique route/role/surface boundary, and the fixed output contract.
+   - Track assigned surfaces before spawning so multiple subagents do not probe the same endpoint or state-changing flow.
+   - Do not give subagents broad permission to inspect source code, change data, run high-rate scanners, exfiltrate secrets, or start remediation.
+   - Merge subagent reports as leads first; only confirmed, externally reproducible issues become findings.
+
+4. Probe black-box:
    - Inspect security headers, cookies, redirects, CORS behavior, cache behavior, and error responses.
    - Exercise authenticated and unauthenticated flows with low-volume requests.
    - Verify access-control boundaries by switching roles/tenants and changing identifiers only inside test data.
    - Record reproducible evidence: request path, method, role, relevant headers, status, response shape, screenshot path, and log excerpt.
 
-4. Validate from the outside:
+5. Validate from the outside:
    - Reproduce each suspected issue with the minimum safe request sequence.
    - Compare expected and actual behavior using only approved roles, accounts, tenants, and test data.
    - Classify scanner output and suspicious behavior as leads until confirmed by external evidence.
    - Do not report speculative issues as confirmed findings.
 
-5. Report clearly:
+6. Report clearly:
    - Findings first, ordered by severity.
    - Include severity, affected asset, evidence, impact, likely root cause if inferable from behavior, remediation recommendation, validation, and residual risk.
    - Separate confirmed findings from hypotheses, blocked checks, and clean passes.
@@ -83,6 +92,8 @@ If authorization, target scope, or destructive-action permission is unclear, sto
 ## Assessment Lenses
 
 Read `references/checklist.md` before a broad assessment or when choosing test lenses. It covers authentication, authorization, session management, CSRF/origin, injection, XSS, SSRF/open redirect, file handling, headers/CSP/CORS, multi-tenant isolation, business logic, secrets, observability, dependencies, and operational controls.
+
+Read `references/subagent-lenses.md` when splitting a broad assessment across attack-case specialists.
 
 Use `references/report-template.md` when producing a formal report or durable repo artifact.
 

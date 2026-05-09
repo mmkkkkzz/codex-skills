@@ -110,6 +110,40 @@ def main() -> int:
     )
 
     write_file(
+        assessment_dir / "subagents.md",
+        """# Subagent Coordination
+
+Use this only when delegation is available, the user explicitly asked for subagents or parallel assessment, and the scope gate is satisfied.
+
+## Assigned Lenses
+
+| Lens | Agent | Route/role/tenant/surface boundary | Request budget | Status | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Surface mapper |  |  |  | pending |  |
+| Browser controls |  |  |  | pending |  |
+| Auth and session |  |  |  | pending |  |
+| Authorization and tenant isolation |  |  |  | pending |  |
+| Input handling and XSS |  |  |  | pending |  |
+| Files, reports, and storage |  |  |  | pending |  |
+| Business logic |  |  |  | pending |  |
+
+## Safety Stops
+
+| Proposed check | Risk | Required permission | Approved/blocked | Safer alternative |
+| --- | --- | --- | --- | --- |
+|  |  |  |  |  |
+
+## Merge Notes
+
+- Treat subagent output as leads until the coordinator verifies externally observable behavior inside scope.
+- Promote only confirmed, reproducible, in-scope issues to findings.
+- Keep hypotheses, blocked checks, and clean passes separate.
+- Deduplicate by affected asset, actor boundary, and root behavior.
+- Record request counts, state-changing actions avoided, and residual risk.
+""",
+    )
+
+    write_file(
         assessment_dir / "findings.md",
         """# Findings
 
