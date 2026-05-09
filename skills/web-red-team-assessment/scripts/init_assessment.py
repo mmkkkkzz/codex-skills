@@ -69,6 +69,7 @@ def main() -> int:
 - Authorization owner:
 - Environment: local only
 - Test accounts and roles, redacted:
+- Credential inventory path: credentials.md
 - In-scope data boundaries:
 - Disposable local data/services:
 - Stubbed email/SMS/payment/webhook sinks:
@@ -84,11 +85,37 @@ def main() -> int:
 ## Rules of Engagement
 
 - Use only local approved targets, accounts, and disposable test data.
+- Use seed-derived credentials only for local authentication and pass them only to subagents that need them.
 - Use externally observable behavior only unless the user explicitly changes scope.
 - Do not modify source code, configuration files, infrastructure, branches, commits, PRs, or deployments during assessment work.
 - Destructive app-level actions are allowed only inside the local disposable target and must be followed by cleanup/reset notes.
 - Redact secrets, tokens, cookies, and personal data from artifacts.
 - Stop before any staging, preview, production, public internet, third-party, host-damaging, real-secret, phishing, malware, or persistence test.
+""",
+    )
+
+    write_file(
+        assessment_dir / "credentials.md",
+        """# Local Seed Credentials
+
+Sensitive local assessment artifact. Do not commit.
+
+Populate this from seed/fixture/demo/test-data files, preferably with:
+
+```bash
+python3 /path/to/web-red-team-assessment/scripts/extract_seed_credentials.py --root . --out <assessment-dir>/credentials.md
+```
+
+| Login | Password | Role | Tenant | Facility | Source | Confidence | Assigned lenses |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+|  |  |  |  |  |  |  |  |
+
+## Handling Rules
+
+- Use these credentials only against the approved local disposable target.
+- Pass only the required account to each subagent.
+- Do not include raw passwords, cookies, tokens, or session identifiers in final reports.
+- Redact credentials from copied subagent output before merging.
 """,
     )
 
@@ -122,18 +149,18 @@ Use this only when delegation is available, the user explicitly asked for subage
 
 ## Assigned Lenses
 
-| Lens | Agent | Route/role/tenant/surface boundary | Request/resource budget | Status | Notes |
-| --- | --- | --- | --- | --- | --- |
-| Surface mapper |  |  |  | pending |  |
-| Browser controls |  |  |  | pending |  |
-| Auth and session |  |  |  | pending |  |
-| Authorization and tenant isolation |  |  |  | pending |  |
-| Destructive workflow and CSRF |  |  |  | pending |  |
-| Input handling, injection, and XSS |  |  |  | pending |  |
-| Files, reports, and storage |  |  |  | pending |  |
-| Business logic |  |  |  | pending |  |
-| Automation, fuzz, and local stress |  |  |  | pending |  |
-| Cleanup and reset coordinator |  |  |  | pending |  |
+| Lens | Agent | Assigned credential | Route/role/tenant/surface boundary | Request/resource budget | Status | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| Surface mapper |  | none unless needed |  |  | pending |  |
+| Browser controls |  | none unless needed |  |  | pending |  |
+| Auth and session |  |  |  |  | pending |  |
+| Authorization and tenant isolation |  |  |  |  | pending |  |
+| Destructive workflow and CSRF |  |  |  |  | pending |  |
+| Input handling, injection, and XSS |  |  |  |  | pending |  |
+| Files, reports, and storage |  |  |  |  | pending |  |
+| Business logic |  |  |  |  | pending |  |
+| Automation, fuzz, and local stress |  |  |  |  | pending |  |
+| Cleanup and reset coordinator |  |  |  |  | pending |  |
 
 ## Safety Stops
 

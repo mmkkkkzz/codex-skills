@@ -6,10 +6,19 @@ All subagents must stay black-box and inside approved local accounts, roles, ten
 
 Spawning a specialized attack-case subagent does not expand target scope beyond the local disposable target. Every subagent inherits the same local-only safety boundary unless the user explicitly grants a narrower permission.
 
+## Credential Distribution
+
+- The coordinator may inspect local seed, fixture, demo, factory, e2e, and test-data files only to build the local login credential inventory.
+- Prefer `scripts/extract_seed_credentials.py` and record the source file/line and confidence for each account.
+- Do not read `.env` files, production dumps, cloud consoles, password managers, or external systems for credentials.
+- Assign credentials by lens need: unauthenticated/passive lenses get no login; auth/session gets one or more role accounts; authorization/tenant lenses get paired role/tenant accounts; destructive/business lenses get disposable accounts only.
+- Pass raw passwords only inside the specific subagent prompt that needs to log in. Instruct every subagent not to echo passwords, cookies, tokens, or session identifiers in its report.
+- If a subagent reports a credential, redact it before merging the output.
+
 ## When to Delegate
 
 - Use subagents only when the runtime supports delegation and the user explicitly asks for subagents, parallel assessment, or broad multi-lens coverage.
-- Do not delegate before authorization, local target URLs, disposable backing services, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
+- Do not delegate authenticated lenses before authorization, local target URLs, disposable backing services, seed-derived credentials or explicit local credentials, accounts/roles, prohibited non-local actions, request/resource budgets, and cleanup/reset paths are clear.
 - If the target is staging, preview, production, shared, or public internet, stop and ask for a local disposable target instead.
 - Assign each subagent a request/resource budget plus a unique route, role, tenant/facility, or surface boundary to avoid duplicate probing and uncontrolled local load.
 - If subagents are unavailable, run the same lenses sequentially in the main thread.
@@ -42,6 +51,7 @@ Scope:
 - Target URLs:
 - Environment:
 - Approved accounts/roles/tenants/facilities:
+- Assigned local login credentials, if needed:
 - Disposable services/data:
 - Reset/cleanup command:
 - Allowed actions:
@@ -57,6 +67,7 @@ Lens:
 Rules:
 - Stay black-box and externally observable.
 - Stay within the local disposable target and assigned request/resource budget.
+- Use assigned credentials only for this local target and do not echo passwords, cookies, tokens, or session identifiers.
 - Do not modify code, configuration, infrastructure, branches, commits, PRs, or deployments.
 - Destructive app-level actions are allowed only if listed in Allowed actions and covered by the reset/cleanup command.
 - Do not damage the host, developer tools, source repo, package cache, real cloud resources, or shared services.

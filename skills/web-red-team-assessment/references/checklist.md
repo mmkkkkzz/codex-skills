@@ -7,6 +7,8 @@ Use this checklist to choose focused test lenses for local, disposable web targe
 - Confirm authorization and that all target URLs are local-only (`localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host).
 - Identify roles, tenants, organizations, facilities, account states, and privilege boundaries.
 - Confirm backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable, stubbed, or resettable.
+- Build a local credential inventory from seed/fixture/demo/test-data files and record source file/line and confidence.
+- Pass seed-derived credentials only to subagents that need to log in; do not echo raw passwords in reports.
 - Record reset/cleanup commands before destructive tests.
 - Use disposable accounts and test data. Redact tokens, cookies, personal data, and real secrets.
 - Capture evidence with request method/path, actor, expected result, actual result, and timestamp.

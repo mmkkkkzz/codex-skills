@@ -16,7 +16,7 @@ Before probing any target, establish enough local scope to keep the first action
 - The user owns the target or has explicit authorization to test it.
 - Target URLs and APIs are local-only: `localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host that does not route to staging, preview, production, or third-party systems.
 - The app is running locally, and backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable or safely stubbed.
-- Accounts, roles, tenants, facilities, seed data, and reset/cleanup commands are known.
+- Accounts, roles, tenants, facilities, seed data, seed-derived login credentials, and reset/cleanup commands are known.
 - Request budgets, resource limits, and whether local stress/scanner runs are allowed.
 - Confirmation that destructive app-level operations are allowed only within this local disposable scope.
 - Confirmation that source/config/infrastructure changes and remediation are separate unless explicitly requested.
@@ -27,6 +27,7 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
 - Treat every assessment as black-box unless the user explicitly asks for code-assisted review.
 - Do not inspect source code, database schema, infrastructure configuration, logs, or internal implementation details for vulnerability discovery during the assessment.
+- Exception: during local setup, inspect seed/fixture/demo/test-data files only to discover disposable login credentials, roles, tenants, facilities, and reset data needed for authentication and subagent assignment. Do not use source internals as vulnerability evidence.
 - Use externally observable behavior: browser flows, HTTP requests/responses, response headers, cookies, redirects, visible files, authenticated test accounts, approved scanners, and local destructive app actions.
 - Produce a vulnerability report, attack ledger, and cleanup/reset notes. Do not edit source files, change settings, create migrations, commit, push, open PRs, resolve review threads, or deploy fixes unless the user starts a separate remediation task.
 - If the user combines assessment and fixes in one request, run the black-box report first and defer code changes until confirmed findings exist and the user explicitly starts the remediation pass.
@@ -59,36 +60,48 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
    Use the repo's established docs or planning location instead when one exists.
 
-2. Build a target map:
+2. Build a local credential inventory from seed data before spawning authenticated subagents:
+   - Prefer the bundled helper:
+
+     ```bash
+     python3 /path/to/web-red-team-assessment/scripts/extract_seed_credentials.py --root . --out <assessment-dir>/credentials.md
+     ```
+
+   - Search only local seed, fixture, demo, factory, e2e, and test-data files. Do not read `.env` secrets, production dumps, cloud consoles, or external systems for credentials.
+   - Record account login, password when seed-derived plaintext exists, role, tenant, facility, source file/line, and confidence.
+   - Treat `credentials.md` as a sensitive local artifact: do not commit it, do not paste full passwords into final reports, and do not pass credentials to subagents that do not need authentication.
+   - When delegating, pass each subagent only the specific local login needed for its lens and instruct it not to echo passwords, cookies, tokens, or session identifiers.
+
+3. Build a target map:
    - Record base URLs, auth roles, test accounts, tenant IDs, and expected access boundaries.
    - Enumerate externally visible routes, API endpoints, forms, file upload/download surfaces, auth/session flows, and state-changing actions.
    - For local apps, run the app normally and inspect browser behavior, network traffic, requests, responses, storage, cookies, and redirects.
    - Record reset/cleanup commands before destructive testing begins.
 
-3. Use specialized attack-lens subagents when delegation is available, the user explicitly asked for subagents or parallel assessment, and scope is clear enough to probe safely:
+4. Use specialized attack-lens subagents when delegation is available, the user explicitly asked for subagents or parallel assessment, and scope is clear enough to probe safely:
    - Read `references/subagent-lenses.md` before delegating.
    - Spawning a specialized attack-case subagent does not expand target scope or allow third-party/prod impact; every subagent inherits the same local-only disposable safety boundary.
    - Keep the main agent as coordinator for scope, safety stops, target map, evidence naming, and final severity decisions.
-   - Give each subagent one lens, the approved scope, explicit prohibited actions, allowed accounts/roles/tenants, request budget, unique route/role/surface boundary, and the fixed output contract.
+   - Give each subagent one lens, the approved scope, explicit prohibited actions, assigned local login credentials when needed, allowed accounts/roles/tenants, request budget, unique route/role/surface boundary, and the fixed output contract.
    - Track assigned surfaces before spawning so multiple subagents do not probe the same endpoint or state-changing flow.
    - Do not give subagents broad permission to inspect source code, alter non-app resources, exfiltrate real secrets, probe third parties, or start remediation.
    - Merge subagent reports as leads first; only confirmed, externally reproducible issues become findings.
 
-4. Probe black-box:
+5. Probe black-box:
    - Inspect security headers, cookies, redirects, CORS behavior, cache behavior, and error responses.
    - Exercise authenticated and unauthenticated flows, including destructive flows, inside local disposable test data.
    - Verify access-control boundaries by switching roles/tenants and changing identifiers only inside local test data.
    - Run approved local scanner, fuzz, replay, lockout, race, export, and stress checks within the request/resource budget.
    - Record reproducible evidence: request path, method, role, relevant headers, status, response shape, screenshot path, and log excerpt.
 
-5. Validate from the outside:
+6. Validate from the outside:
    - Reproduce each suspected issue with the minimum safe request sequence.
    - Compare expected and actual behavior using only approved local roles, accounts, tenants, and test data.
    - Classify scanner output and suspicious behavior as leads until confirmed by external evidence.
    - Do not report speculative issues as confirmed findings.
    - Run or document cleanup/reset after destructive checks.
 
-6. Report clearly:
+7. Report clearly:
    - Findings first, ordered by severity.
    - Include severity, affected asset, evidence, impact, likely root cause if inferable from behavior, remediation recommendation, validation, and residual risk.
    - Separate confirmed findings from hypotheses, blocked checks, and clean passes.
