@@ -100,7 +100,7 @@ def main() -> int:
 
 Sensitive local assessment artifact. Do not commit.
 
-Populate this from seed/fixture/demo/test-data files, preferably with:
+Populate this manually from seed/fixture/demo/test-data/setup docs, or use the helper as a first pass:
 
 ```bash
 python3 /path/to/web-red-team-assessment/scripts/extract_seed_credentials.py --root . --out <assessment-dir>/credentials.md
@@ -113,6 +113,7 @@ python3 /path/to/web-red-team-assessment/scripts/extract_seed_credentials.py --r
 ## Handling Rules
 
 - Use these credentials only against the approved local disposable target.
+- Verify ambiguous helper output manually before assigning it to a subagent.
 - Pass only the required account to each subagent.
 - Do not include raw passwords, cookies, tokens, or session identifiers in final reports.
 - Redact credentials from copied subagent output before merging.

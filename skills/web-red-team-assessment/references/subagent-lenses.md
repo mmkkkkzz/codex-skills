@@ -8,9 +8,10 @@ Spawning a specialized attack-case subagent does not expand target scope beyond 
 
 ## Credential Distribution
 
-- The coordinator may inspect local seed, fixture, demo, factory, e2e, and test-data files only to build the local login credential inventory.
-- Prefer `scripts/extract_seed_credentials.py` and record the source file/line and confidence for each account.
+- The coordinator may inspect local seed, fixture, demo, factory, e2e, test-data, setup docs, and local test helpers only to build the local login credential inventory.
+- Use `scripts/extract_seed_credentials.py` as an optional first pass. The coordinator may also investigate manually and should verify ambiguous helper output before assignment.
 - Do not read `.env` files, production dumps, cloud consoles, password managers, or external systems for credentials.
+- Record the source file/line or doc reference and confidence for each account.
 - Assign credentials by lens need: unauthenticated/passive lenses get no login; auth/session gets one or more role accounts; authorization/tenant lenses get paired role/tenant accounts; destructive/business lenses get disposable accounts only.
 - Pass raw passwords only inside the specific subagent prompt that needs to log in. Instruct every subagent not to echo passwords, cookies, tokens, or session identifiers in its report.
 - If a subagent reports a credential, redact it before merging the output.

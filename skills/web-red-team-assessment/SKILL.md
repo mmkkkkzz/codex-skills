@@ -60,15 +60,17 @@ If the target is not clearly local and disposable, stop before probing and ask o
 
    Use the repo's established docs or planning location instead when one exists.
 
-2. Build a local credential inventory from seed data before spawning authenticated subagents:
-   - Prefer the bundled helper:
+2. Build a local credential inventory before spawning authenticated subagents:
+   - The coordinator owns this setup step. It may inspect local seed, fixture, demo, factory, e2e, test-data, setup docs, and local test helpers to determine which disposable accounts exist and how to log in.
+   - Use the bundled helper as an optional first pass, not as the only source of truth:
 
      ```bash
      python3 /path/to/web-red-team-assessment/scripts/extract_seed_credentials.py --root . --out <assessment-dir>/credentials.md
      ```
 
-   - Search only local seed, fixture, demo, factory, e2e, and test-data files. Do not read `.env` secrets, production dumps, cloud consoles, or external systems for credentials.
-   - Record account login, password when seed-derived plaintext exists, role, tenant, facility, source file/line, and confidence.
+   - Do not read `.env` secrets, production dumps, cloud consoles, password managers, or external systems for credentials.
+   - Record account login, password when local plaintext seed/setup data exists, role, tenant, facility, source file/line or doc reference, and confidence.
+   - Verify ambiguous helper output manually before assigning it to a subagent.
    - Treat `credentials.md` as a sensitive local artifact: do not commit it, do not paste full passwords into final reports, and do not pass credentials to subagents that do not need authentication.
    - When delegating, pass each subagent only the specific local login needed for its lens and instruct it not to echo passwords, cookies, tokens, or session identifiers.
 
