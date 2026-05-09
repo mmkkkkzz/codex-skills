@@ -6,8 +6,9 @@ Use this structure for a durable report. Keep sensitive values redacted.
 
 - Target:
 - Dates:
-- Assessment mode: black-box report-only
+- Assessment mode: local-only black-box destructive assessment
 - Authorization and scope:
+- Disposable services/data and reset path:
 - Overall result:
 - Highest severity:
 
@@ -29,6 +30,7 @@ Use this structure for a durable report. Keep sensitive values redacted.
 - Remediation recommendation:
 - Regression test recommendation:
 - Validation:
+- Cleanup/reset performed:
 - Residual risk:
 
 Repeat for each confirmed finding. Do not include speculative items here.
@@ -62,3 +64,4 @@ List suspicious signals, blocked checks, missing credentials, or areas left unte
 - Test accounts and roles, redacted:
 - Tool versions:
 - Scanner outputs or artifact paths:
+- Cleanup/reset commands:

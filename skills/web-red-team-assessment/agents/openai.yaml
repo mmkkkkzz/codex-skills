@@ -1,4 +1,4 @@
 interface:
   display_name: "Web Red Team Assessment"
-  short_description: "Black-box report-only pentest with attack lenses"
-  default_prompt: "Use $web-red-team-assessment to run a black-box, report-only security assessment of this web app, split safe attack-lens subagents when appropriate, and report evidence-backed findings."
+  short_description: "Local-only destructive pentest with attack lenses"
+  default_prompt: "Use $web-red-team-assessment to run a local-only black-box security assessment of this disposable web app, split attack-lens subagents when appropriate, and report evidence-backed findings plus cleanup notes."

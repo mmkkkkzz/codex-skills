@@ -31,7 +31,7 @@ def write_file(path: Path, content: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Create an assessment ledger for an authorized web security review."
+        description="Create an assessment ledger for an authorized local web security review."
     )
     parser.add_argument("--root", default=".", help="Repository or workspace root")
     parser.add_argument("--target", required=True, help="Short target name or slug")
@@ -67,24 +67,28 @@ def main() -> int:
 - Base URLs:
 {base_urls}
 - Authorization owner:
-- Environment: local / staging / preview / production
+- Environment: local only
 - Test accounts and roles, redacted:
 - In-scope data boundaries:
-- Disposable local/staging data:
-- Out-of-scope systems:
-- Rate limits:
-- Assessment mode: black-box report-only
+- Disposable local data/services:
+- Stubbed email/SMS/payment/webhook sinks:
+- Out-of-scope systems: staging, preview, production, public internet, third parties
+- Request/resource budgets:
+- Reset/cleanup commands:
+- Assessment mode: local black-box destructive assessment
 - Remediation requested now: no, defer until confirmed findings are reported
-- Destructive actions allowed: no, unless explicitly listed below
+- Destructive app-level actions allowed: yes, local disposable scope only
 - Explicitly allowed destructive actions:
+- Explicitly prohibited non-local actions:
 
 ## Rules of Engagement
 
-- Use only approved targets, accounts, and test data.
+- Use only local approved targets, accounts, and disposable test data.
 - Use externally observable behavior only unless the user explicitly changes scope.
-- Do not modify code, configuration, data, infrastructure, branches, commits, PRs, or deployments during report-only work.
+- Do not modify source code, configuration files, infrastructure, branches, commits, PRs, or deployments during assessment work.
+- Destructive app-level actions are allowed only inside the local disposable target and must be followed by cleanup/reset notes.
 - Redact secrets, tokens, cookies, and personal data from artifacts.
-- Stop before high-rate, destructive, third-party, or production-impacting tests unless explicitly approved.
+- Stop before any staging, preview, production, public internet, third-party, host-damaging, real-secret, phishing, malware, or persistence test.
 """,
     )
 
@@ -97,15 +101,16 @@ def main() -> int:
 | Recon and route/API map | TBD |  | pending |  |
 | Authentication and session | TBD |  | pending |  |
 | Authorization and multi-tenant isolation | TBD |  | pending |  |
-| State-changing request protection | TBD |  | pending |  |
-| Input validation and injection sinks | TBD |  | pending |  |
+| Destructive workflow and CSRF | TBD |  | pending |  |
+| Input validation, injection, fuzz, and XSS | TBD |  | pending |  |
 | XSS and client-side rendering | TBD |  | pending |  |
 | SSRF, redirects, and external fetching | TBD |  | pending |  |
 | File handling, reports, and storage | TBD |  | pending |  |
 | Headers, CORS, CSP, and caching | TBD |  | pending |  |
 | Secrets and supply chain | TBD |  | pending |  |
 | Business logic and abuse resistance | TBD |  | pending |  |
-| Logging, monitoring, and auditability | TBD |  | pending |  |
+| Automation, fuzz, race, and local stress | TBD |  | pending |  |
+| Cleanup and reset | TBD |  | pending |  |
 """,
     )
 
@@ -113,23 +118,26 @@ def main() -> int:
         assessment_dir / "subagents.md",
         """# Subagent Coordination
 
-Use this only when delegation is available, the user explicitly asked for subagents or parallel assessment, and the scope gate is satisfied.
+Use this only when delegation is available, the user explicitly asked for subagents or parallel assessment, and the local-only scope gate is satisfied.
 
 ## Assigned Lenses
 
-| Lens | Agent | Route/role/tenant/surface boundary | Request budget | Status | Notes |
+| Lens | Agent | Route/role/tenant/surface boundary | Request/resource budget | Status | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Surface mapper |  |  |  | pending |  |
 | Browser controls |  |  |  | pending |  |
 | Auth and session |  |  |  | pending |  |
 | Authorization and tenant isolation |  |  |  | pending |  |
-| Input handling and XSS |  |  |  | pending |  |
+| Destructive workflow and CSRF |  |  |  | pending |  |
+| Input handling, injection, and XSS |  |  |  | pending |  |
 | Files, reports, and storage |  |  |  | pending |  |
 | Business logic |  |  |  | pending |  |
+| Automation, fuzz, and local stress |  |  |  | pending |  |
+| Cleanup and reset coordinator |  |  |  | pending |  |
 
 ## Safety Stops
 
-| Proposed check | Risk | Required permission | Approved/blocked | Safer alternative |
+| Proposed check | Risk | Budget/reset requirement | Approved/blocked | Safer alternative |
 | --- | --- | --- | --- | --- |
 |  |  |  |  |  |
 
@@ -139,7 +147,7 @@ Use this only when delegation is available, the user explicitly asked for subage
 - Promote only confirmed, reproducible, in-scope issues to findings.
 - Keep hypotheses, blocked checks, and clean passes separate.
 - Deduplicate by affected asset, actor boundary, and root behavior.
-- Record request counts, state-changing actions avoided, and residual risk.
+- Record request counts, state-changing actions performed, cleanup/reset status, and residual risk.
 """,
     )
 
@@ -160,6 +168,7 @@ Use this only when delegation is available, the user explicitly asked for subage
 - Remediation recommendation:
 - Regression test recommendation:
 - Validation:
+- Cleanup/reset performed:
 - Residual risk:
 
 ## Hypotheses

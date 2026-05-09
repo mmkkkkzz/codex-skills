@@ -1,12 +1,14 @@
 # Web Security Assessment Checklist
 
-Use this checklist to choose focused test lenses. Do not run every check mechanically; pick the surfaces that exist in the target and record skipped or blocked areas.
+Use this checklist to choose focused test lenses for local, disposable web targets. Do not run every check mechanically; pick the surfaces that exist in the target and record skipped or blocked areas.
 
 ## Scope and Setup
 
-- Confirm authorization, target URLs, in-scope environments, and out-of-scope third parties.
+- Confirm authorization and that all target URLs are local-only (`localhost`, `127.0.0.1`, `::1`, or an explicitly local dev host).
 - Identify roles, tenants, organizations, facilities, account states, and privilege boundaries.
-- Use disposable accounts and test data. Redact tokens, cookies, personal data, and secrets.
+- Confirm backing services, queues, storage, email/SMS/payment/webhook sinks, and test data are disposable, stubbed, or resettable.
+- Record reset/cleanup commands before destructive tests.
+- Use disposable accounts and test data. Redact tokens, cookies, personal data, and real secrets.
 - Capture evidence with request method/path, actor, expected result, actual result, and timestamp.
 
 ## Reconnaissance
@@ -38,13 +40,14 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 - Check trusted-origin, CSRF, idempotency, and replay behavior.
 - Verify content-type, body size, schema validation, and unexpected field rejection.
 - Confirm audit logging for high-risk writes and administrative actions.
+- In local destructive mode, include delete, bulk update, lockout, replay, duplicate submission, and race-prone actions when cleanup/reset is available.
 
 ## Input and Injection
 
 - Test validation boundaries for strings, numbers, dates, enums, UUIDs, arrays, nested objects, file names, and CSV fields.
 - Check SQL/NoSQL/query-builder injection risks at server and RPC boundaries.
 - Check command, template, path traversal, LDAP, mail header, CSV formula, and log injection only where the matching sink exists.
-- Use harmless marker payloads and confirm whether input is rejected, escaped, or stored safely.
+- Use harmless marker payloads by default. Local destructive mode may use broader malformed payloads, fuzzed values, and large-but-bounded inputs when host/resource limits are set.
 
 ## XSS and Client-Side Issues
 
@@ -58,7 +61,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 - Inspect callbacks, webhooks, URL previews, import-from-URL features, image fetching, redirects, and file proxy endpoints.
 - Verify allowlists and scheme restrictions for server-side fetches.
 - Check open redirect behavior on `next`, `redirect`, `returnTo`, and callback parameters.
-- Do not attempt cloud metadata access or third-party callbacks unless explicitly approved and isolated.
+- Do not attempt real cloud metadata access or third-party callbacks. Use local stub endpoints only.
 
 ## File Handling, Reports, and Storage
 
@@ -66,6 +69,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 - Verify download authorization and signed URL lifetime.
 - Check report generation, re-download, CSV/PDF exports, cached artifacts, and background jobs for cross-tenant access.
 - Confirm generated files do not include hidden columns, raw IDs, secrets, or data from another tenant.
+- In local destructive mode, include bulk exports, corrupted uploads, oversized files within host limits, and cleanup of generated artifacts.
 
 ## Headers, Browser Isolation, and Caching
 
@@ -76,7 +80,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 
 ## Secrets and Supply Chain
 
-- Search for committed secrets, exposed environment variables, debug endpoints, source maps, logs, and build artifacts.
+- Inspect externally visible secrets, exposed environment variables, debug endpoints, source maps, logs, and build artifacts. Do not exfiltrate or publish real secrets; record redacted evidence only.
 - Check client bundles for server-only configuration or privileged URLs.
 - Run the repo's dependency audit commands when available.
 - Treat scanner findings as leads until manually confirmed in the app context.
@@ -86,6 +90,7 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 - Check workflow sequencing, approval bypass, duplicate submission, race-prone actions, quota bypass, and role transitions.
 - Validate trial, billing, invitation, facility selection, user assignment, report closing/reopening, and irreversible operation rules when present.
 - Confirm high-impact actions have authorization, validation, auditability, and rollback/error handling.
+- In local destructive mode, exercise irreversible-looking workflows only when they are backed by disposable data and a reset path.
 
 ## Reporting Discipline
 
@@ -93,3 +98,4 @@ Use this checklist to choose focused test lenses. Do not run every check mechani
 - Label unverified items as hypotheses or blocked checks.
 - Include exact reproduction steps that use approved accounts and test data.
 - Include a minimal fix direction and a regression-test recommendation for every finding.
+- Include cleanup/reset commands run or still needed after destructive checks.
