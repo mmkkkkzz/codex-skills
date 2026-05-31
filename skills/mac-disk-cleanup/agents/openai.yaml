@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mac Disk Cleanup"
+  short_description: "Audit and clean macOS disk usage safely"
+  default_prompt: "Use $mac-disk-cleanup to find safe disk cleanup candidates on this Mac."
