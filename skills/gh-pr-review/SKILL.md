@@ -22,6 +22,17 @@ Review GitHub pull requests as a findings-first code review. Resolve the active 
 
 Both modes must produce the same final output contract and exact changed-file coverage accounting.
 
+## Long-Running Wait Policy
+
+Claude PR Review Toolkit and lens sub-agents can legitimately take longer than 10 minutes on large or high-risk PRs. Do not treat 10 minutes, a single empty `wait_agent` timeout, or a quiet Claude process as failure.
+
+- For Claude, start the helper as a long-running command and keep polling the same session until it exits, errors, or the user asks to stop. Do not mark Claude unavailable solely because it has run for more than 10 minutes.
+- For sub-agents, use long `wait_agent` timeouts when supported. If a wait returns an empty timeout while the agent is still running, wait again instead of closing the agent.
+- Keep doing coordinator direct reads while slow Claude or sub-agent work runs, but do not finalize until the required Claude/sub-agent outputs return or a real terminal failure occurs.
+- Default patience budget: wait at least 20 minutes for normal PRs and at least 45 minutes for large, cross-cutting, migration-heavy, security-sensitive, or all-lens reviews. Waiting longer is appropriate when output is still progressing.
+- Close or fallback only when the tool reports a final failure, the user asks to stop, or the process/agent is clearly non-responsive beyond the patience budget and direct coverage can replace it. In that case, report the exact wait time and fallback reason under `Residual risk`.
+- Send short progress updates during long waits so the user knows the review is still running.
+
 ## Quick Start
 
 1. Verify GitHub CLI access.
@@ -179,6 +190,8 @@ The helper defaults to `--permission-mode auto` and allows the read/review tools
 
 If Claude Code, the `claude-code` Codex skill wrapper, or `pr-review-toolkit@claude-plugins-official` is unavailable, continue with the Codex lens workflow and list `Claude pr-review-toolkit unavailable: <reason>` under `Residual risk`. Do not block the PR review solely because the Claude pass failed.
 
+Long Claude runs are not failures. If the helper is still running after 10 minutes, keep the session open and continue polling according to the Long-Running Wait Policy. Do not replace the Claude result with `unavailable` until the command exits with an error, the user stops the wait, or the explicit patience budget is exhausted.
+
 When merging Claude output with Codex sub-agent outputs:
 
 - Add every concrete Claude finding to the same coordinator finding ledger used for Codex lens findings.
@@ -206,6 +219,8 @@ Available lenses:
 - `maintainability`
 
 Use sub-agents only when the user explicitly asked for a PR review, asked for this skill, or otherwise gave clear permission for delegated review work. If delegation is unavailable in the current environment, perform the same lens-based reasoning yourself and mention the fallback only when it materially affected coverage or confidence.
+
+Long sub-agent runs are not failures. If an agent takes more than 10 minutes, continue waiting according to the Long-Running Wait Policy. If `wait_agent` times out with no final status, call `wait_agent` again instead of closing the agent, unless the user has asked to stop or the explicit patience budget has been exhausted.
 
 Use `spawn_agent` with these fixed sub-agent settings:
 
