@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex MCP Login"
+  short_description: "Log in and verify Codex MCP servers"
+  default_prompt: "Use $codex-mcp-login to log in all configured Codex MCP servers and verify they are usable."
