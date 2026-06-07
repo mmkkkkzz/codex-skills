@@ -23,11 +23,21 @@ Run the bundled checker before and after login:
 bash /Users/mkmini/.codex/skills/codex-mcp-login/scripts/check_codex_mcp.sh
 ```
 
+The checker is a smoke test for Codex config, Codex auth, MCP config, local HTTP MCP `initialize`, and leftover login processes. It does not prove that remote OAuth tokens can call every remote MCP tool; for OAuth servers, the primary proof is the `codex mcp login <name>` success line, followed by normal use in a new Codex session when needed.
+
 Interpret `codex mcp list` this way:
 
 - `Auth: OAuth`: run `codex mcp login <name>` when the user wants it logged in.
 - `Auth: Unsupported`: no OAuth login exists. Verify by process or local HTTP health when applicable.
 - `Status: disabled`: do not enable it just because the user asked to log in. Report it separately unless they asked to enable disabled servers.
+
+If the user explicitly asks to make a disabled MCP usable, treat that as an enablement/configuration task, not a login task. Confirm the exact disabled server name in the work summary, then:
+
+```bash
+codex mcp get <name>
+```
+
+If the CLI has no enable subcommand, edit only that server's block in `~/.codex/config.toml` and set `enabled = true` or remove an explicit `enabled = false`, preserving the existing `command`, `args`, `url`, `env`, and tool approval settings. Then rerun `codex mcp list` and the relevant smoke check. Do not enable heavy optional servers such as `chrome-devtools` unless the user explicitly requested that server or explicitly requested disabled servers to be enabled.
 
 ## OAuth Login
 
@@ -57,7 +67,7 @@ Poll the login command after browser approval:
 
 ```bash
 # if the process is in an exec session, poll it; otherwise check:
-ps -axo pid=,ppid=,etime=,command= | rg 'codex mcp login'
+ps -axo pid=,ppid=,etime=,command= | rg '[c]odex mcp login'
 ```
 
 Treat this exact CLI line as success:
@@ -90,6 +100,7 @@ Common current services and their usual prompts:
 - `supabase`: may require an organization selection. OAuth applies to the selected organization and its projects.
 - `travel_planner`: may show a simple `mcp:tools` approval screen. Browser callback may show blocked locally even when CLI succeeds.
 - `vercel`: may require selecting a team/project scope. Prefer the clearly requested/default scope; otherwise ask.
+- `chrome-devtools`: usually `Auth Unsupported`. If disabled and explicitly requested, enable it as a config task and verify startup separately; do not run `codex mcp login chrome-devtools`.
 
 These notes are hints, not guarantees. Always trust the current page and CLI output over this list.
 
