@@ -1,27 +1,56 @@
 ---
 name: video-meeting-minutes
-description: /Users/mk/Developer/video-meeting-minutes CLIを使って、ローカル動画から議事録を生成・確認・再生成する。mp4の文字起こし、ElevenLabs Scribe v2の話者分離、画面変化フレーム解析、frame_analysis.jsonの再生成、既存出力からminutes.mdを再生成する依頼で使う。
+description: グローバルインストール済みの`video-meeting-minutes` CLI（ラッパー`vmm`）で、ローカル動画から議事録を生成・確認・再生成する。mp4の文字起こし、ElevenLabs Scribe v2の話者分離、画面変化フレーム解析、frame_analysis.jsonの再生成、既存出力からminutes.mdを再生成する依頼で使う。
 ---
 
 # Video Meeting Minutes
 
 ## 概要
 
-実装本体はローカルの `video-meeting-minutes` repoを使う。このskillは、会議動画から議事録を作る運用手順と、再実行用の薄い補助scriptをまとめたもの。
+`video-meeting-minutes`は`uv tool install --editable`で**グローバルインストール済み**のCLIで、どのディレクトリからでも実行できる（`uv run`や`cd`は不要）。このskillは、会議動画から議事録を作る運用手順と、再実行用の薄い補助scriptをまとめたもの。
 
-デフォルトrepo:
+実装本体（ソースと再実行用script）は次のrepoにある。エディタブルインストールなので、ここのコードを編集すればグローバルコマンドにも即反映される。
 
 ```bash
 /Users/mk/Developer/video-meeting-minutes
 ```
 
+実行ファイルの場所:
+
+```bash
+~/.local/bin/video-meeting-minutes
+```
+
+`~/.zshrc`にラッパー関数`vmm`が定義済みで、repoの`.env`を読み込んでからグローバルCLIを起動する。インタラクティブシェルでは`vmm`を使うのが基本。
+
+```bash
+# ~/.zshrc に定義済み
+vmm() {
+  set -a && source /Users/mk/Developer/video-meeting-minutes/.env && set +a
+  video-meeting-minutes "$@"
+}
+```
+
 ## 安全ルール
 
-- `.env`の中身やAPIキーは表示しない。
+- `.env`の中身やAPIキーは表示しない。env読み込みは`source`で行い、`cat`等で中身を出さない。
 - ユーザーが明示しない限り、`.env`、入力動画、`.DS_Store`、生成済みの`output/`成果物はcommitしない。
 - `vision/frame_analysis.json`や`minutes.md`を上書きする前に、同じディレクトリへタイムスタンプ付きbackupを作る。
-- 対象repoでは`uv`を使う。
+- 補助script（再実行）は対象repo内で`uv`を使う。
 - 直接使う外部文字起こしAPIはElevenLabsだけ。フレーム解析と議事録生成はCodex app-server経由で行う。
+
+## 前提
+
+- グローバル実行には`ELEVENLABS_API_KEY`等のenvが必要。APIキーの実体はrepoの`.env`の1ヶ所だけに置く（`~/.zshrc`等へ複製しない）。
+- `vmm`はenv読み込みを自動で行う。`vmm`が使えない環境（非インタラクティブシェル、スクリプト内など）では、素のコマンドの前にrepoの`.env`を読み込む:
+
+  ```bash
+  set -a && source /Users/mk/Developer/video-meeting-minutes/.env && set +a
+  video-meeting-minutes path/to/meeting.mp4
+  ```
+
+- Codex側は`codex login`済みであること。
+- `ffmpeg` / `ffprobe`が利用可能であること。
 
 ## デフォルト設定
 
@@ -39,21 +68,43 @@ description: /Users/mk/Developer/video-meeting-minutes CLIを使って、ロー�
 
 ## フル実行
 
-`/Users/mk/Developer/video-meeting-minutes`で実行する。
+どのディレクトリからでも実行できる（env読み込みは`vmm`が自動で行う）。
 
 ```bash
-uv run video-meeting-minutes path/to/meeting.mp4
+vmm path/to/meeting.mp4
 ```
 
 よく使う派生:
 
 ```bash
-uv run video-meeting-minutes path/to/meeting.mp4 --keyterms 勤怠管理 受給者証 事業所 ヘルパー 監査ログ ログインID
-uv run video-meeting-minutes path/to/meeting.mp4 --no-diarize
-uv run video-meeting-minutes path/to/meeting.mp4 --skip-vision --skip-minutes
+vmm path/to/meeting.mp4 --keyterms 勤怠管理 受給者証 事業所 ヘルパー 監査ログ ログインID
+vmm path/to/meeting.mp4 --no-diarize
+vmm path/to/meeting.mp4 --skip-vision --skip-minutes
 ```
 
-実行後は、少なくとも次のパスを報告する。
+出力先を固定したい場合は`--output-dir`に絶対パスを渡す:
+
+```bash
+vmm path/to/meeting.mp4 --output-dir /Users/mk/Developer/video-meeting-minutes/output
+```
+
+## 出力場所
+
+`--output-dir`未指定時は、**コマンドを実行したカレントディレクトリ**の`output/`配下に作られる。
+
+```text
+<実行したディレクトリ>/output/<動画名>_<YYYYMMDD_HHMMSS>/
+  audio/<動画名>.m4a
+  frames/frame_*.jpg
+  transcript/elevenlabs_scribe_v2.txt
+  transcript/elevenlabs_scribe_v2.json
+  vision/frames.json
+  vision/frame_analysis.json
+  manifest.json
+  minutes.md
+```
+
+実行ごとにタイムスタンプ付きディレクトリが作られるため、上書きされない。実行完了時に`Saved minutes: <フルパス>`が表示される。実行後は、少なくとも次のパスを報告する。
 
 - `minutes.md`
 - `transcript/elevenlabs_scribe_v2.txt`
@@ -63,6 +114,8 @@ uv run video-meeting-minutes path/to/meeting.mp4 --skip-vision --skip-minutes
 ## フレーム解析だけ再実行
 
 フレーム解析プロンプトを変更した時、またはユーザーが画像解析だけの再実行を求めた時に使う。音声文字起こしは再実行しない。ユーザーが求めない限り議事録も再生成しない。
+
+補助scriptはrepoの`.venv`内のパッケージを使うため、repo内で`uv run`する。
 
 ```bash
 cd /Users/mk/Developer/video-meeting-minutes
@@ -100,6 +153,13 @@ uv run python /Users/mk/Developer/codex-skills/skills/video-meeting-minutes/scri
 
 ## よくある追加対応
 
-- フレーム解析が浅い場合は、`video_meeting_minutes/codex_tools.py`のフレーム解析プロンプトを修正してから「フレーム解析だけ再実行」を行う。
+- フレーム解析が浅い場合は、`video_meeting_minutes/codex_tools.py`のフレーム解析プロンプトを修正してから「フレーム解析だけ再実行」を行う。エディタブルインストールなので再インストール不要で反映される。
 - 議事録の構造が悪い場合は、`video_meeting_minutes/codex_tools.py`の議事録プロンプトを修正してから「議事録だけ再生成」を行う。
 - 話者分離が必要な場合は、フル実行でデフォルトのdiarize ONを使う。明示するなら`--diarize`を付ける。
+- `vmm: command not found`の場合は、`~/.zshrc`の`vmm`関数定義を確認するか、新しいシェルを開く（または前提セクションの素のコマンド＋env読み込みで代替する）。
+- `video-meeting-minutes: command not found`の場合は再インストール:
+  ```bash
+  cd /Users/mk/Developer/video-meeting-minutes
+  uv tool install --force --editable . --python 3.11 --python-preference only-managed
+  ```
+- `pyproject.toml`の依存を変更した時も、上記`--force`で入れ直す（ソース編集だけなら不要）。
