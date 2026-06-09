@@ -1,51 +1,51 @@
 ---
 name: video-meeting-minutes
-description: Generate, inspect, and refine meeting minutes from local video files using the /Users/mk/Developer/video-meeting-minutes CLI. Use when the user asks to transcribe an mp4, run ElevenLabs Scribe v2 diarization, analyze screen-change frames, regenerate frame_analysis.json, or regenerate minutes.md from existing outputs.
+description: /Users/mk/Developer/video-meeting-minutes CLIを使って、ローカル動画から議事録を生成・確認・再生成する。mp4の文字起こし、ElevenLabs Scribe v2の話者分離、画面変化フレーム解析、frame_analysis.jsonの再生成、既存出力からminutes.mdを再生成する依頼で使う。
 ---
 
 # Video Meeting Minutes
 
-## Overview
+## 概要
 
-Use the local `video-meeting-minutes` repo as the implementation. This skill is an operation guide and thin helper layer for repeatable meeting-video workflows.
+実装本体はローカルの `video-meeting-minutes` repoを使う。このskillは、会議動画から議事録を作る運用手順と、再実行用の薄い補助scriptをまとめたもの。
 
-Default repo:
+デフォルトrepo:
 
 ```bash
 /Users/mk/Developer/video-meeting-minutes
 ```
 
-## Safety Rules
+## 安全ルール
 
-- Do not print `.env` contents or API keys.
-- Do not commit `.env`, input videos, `.DS_Store`, or generated `output/` artifacts unless the user explicitly asks.
-- Before overwriting `vision/frame_analysis.json` or `minutes.md`, create a timestamped backup in the same directory.
-- Prefer `uv` from the target repo.
-- ElevenLabs is the only direct external transcription API. Frame analysis and minutes generation go through Codex app-server.
+- `.env`の中身やAPIキーは表示しない。
+- ユーザーが明示しない限り、`.env`、入力動画、`.DS_Store`、生成済みの`output/`成果物はcommitしない。
+- `vision/frame_analysis.json`や`minutes.md`を上書きする前に、同じディレクトリへタイムスタンプ付きbackupを作る。
+- 対象repoでは`uv`を使う。
+- 直接使う外部文字起こしAPIはElevenLabsだけ。フレーム解析と議事録生成はCodex app-server経由で行う。
 
-## Defaults
+## デフォルト設定
 
-- Transcription: ElevenLabs Scribe v2, `ELEVENLABS_SCRIBE_MODEL=scribe_v2`.
-- Diarization: enabled by default. Use `--no-diarize` only when the user asks.
-- Frame analysis: Codex app-server, `CODEX_VISION_MODEL=gpt-5.5`, `CODEX_VISION_EFFORT=high`.
-- Minutes generation: Codex app-server, `CODEX_MINUTES_MODEL=gpt-5.5`, `CODEX_MINUTES_EFFORT=xhigh`.
-- Minutes template:
+- 文字起こし: ElevenLabs Scribe v2、`ELEVENLABS_SCRIBE_MODEL=scribe_v2`
+- 話者分離: デフォルトON。ユーザーが求めた場合だけ`--no-diarize`で無効化する。
+- フレーム解析: Codex app-server、`CODEX_VISION_MODEL=gpt-5.5`、`CODEX_VISION_EFFORT=high`
+- 議事録生成: Codex app-server、`CODEX_MINUTES_MODEL=gpt-5.5`、`CODEX_MINUTES_EFFORT=xhigh`
+- 議事録テンプレート:
   - `参加者`
   - `決定事項`
   - `TODO`
   - `発言要旨`
-- `TODO` must be a Markdown table with 5W1H-level detail.
-- `発言要旨` must be topic-based, not chronological, with no timestamps. Each topic uses `論点`, `参加者の意見`, `結果`.
+- `TODO`はMarkdown表にし、5W1Hが分かる粒度で書く。
+- `発言要旨`は時系列ではなくトピック別にする。時間は書かない。各トピックは`論点`、`参加者の意見`、`結果`で整理する。
 
-## Full Run
+## フル実行
 
-From `/Users/mk/Developer/video-meeting-minutes`:
+`/Users/mk/Developer/video-meeting-minutes`で実行する。
 
 ```bash
 uv run video-meeting-minutes path/to/meeting.mp4
 ```
 
-Useful variants:
+よく使う派生:
 
 ```bash
 uv run video-meeting-minutes path/to/meeting.mp4 --keyterms 勤怠管理 受給者証 事業所 ヘルパー 監査ログ ログインID
@@ -53,16 +53,16 @@ uv run video-meeting-minutes path/to/meeting.mp4 --no-diarize
 uv run video-meeting-minutes path/to/meeting.mp4 --skip-vision --skip-minutes
 ```
 
-After a run, report the paths for:
+実行後は、少なくとも次のパスを報告する。
 
 - `minutes.md`
 - `transcript/elevenlabs_scribe_v2.txt`
 - `vision/frame_analysis.json`
 - `manifest.json`
 
-## Reanalyze Frames Only
+## フレーム解析だけ再実行
 
-Use this when the frame-analysis prompt changed or the user asks to rerun only visual analysis. Do not retranscribe audio and do not regenerate minutes unless requested.
+フレーム解析プロンプトを変更した時、またはユーザーが画像解析だけの再実行を求めた時に使う。音声文字起こしは再実行しない。ユーザーが求めない限り議事録も再生成しない。
 
 ```bash
 cd /Users/mk/Developer/video-meeting-minutes
@@ -70,11 +70,11 @@ uv run python /Users/mk/Developer/codex-skills/skills/video-meeting-minutes/scri
   --run-dir output/<run-dir>
 ```
 
-The helper reads `vision/frames.json`, backs up the existing `vision/frame_analysis.json`, and writes the regenerated detailed analysis to the same path.
+この補助scriptは`vision/frames.json`を読み、既存の`vision/frame_analysis.json`をbackupしてから、同じパスへ詳細なフレーム解析を再生成する。
 
-## Regenerate Minutes Only
+## 議事録だけ再生成
 
-Use this after changing the minutes prompt, TODO structure, or frame analysis. Do not retranscribe audio or reanalyze frames.
+議事録プロンプト、TODO構造、フレーム解析を変更した後に使う。音声文字起こしやフレーム解析は再実行しない。
 
 ```bash
 cd /Users/mk/Developer/video-meeting-minutes
@@ -82,24 +82,24 @@ uv run python /Users/mk/Developer/codex-skills/skills/video-meeting-minutes/scri
   --run-dir output/<run-dir>
 ```
 
-The helper reads:
+この補助scriptは次を読む。
 
 - `transcript/elevenlabs_scribe_v2.json`
 - `vision/frame_analysis.json`
 
-It backs up `minutes.md` and writes the regenerated minutes to the same path.
+既存の`minutes.md`をbackupしてから、同じパスへ議事録を再生成する。
 
-## Output Review
+## 出力確認
 
-When checking the generated minutes, inspect:
+生成された議事録では次を確認する。
 
-- Headings: exactly the main sections expected by the template.
-- TODO: Markdown table with clear topic, owner, target screen/function, action, reason, deadline.
-- `発言要旨`: topic-level `###` sections, no timestamps, each with `論点`, `参加者の意見`, `結果`.
-- Low-value chatter such as greetings, thanks, screen-sharing setup, and simple acknowledgements should not appear.
+- 見出し: テンプレートの主要セクションになっていること。
+- TODO: Markdown表で、トピック、担当者、対象画面/機能、作業内容、理由・背景、期限が明確なこと。
+- `発言要旨`: トピックごとの`###`小見出しがあり、時間表記がなく、各トピックが`論点`、`参加者の意見`、`結果`で整理されていること。
+- 挨拶、謝意、画面共有の段取り、単なる相づちのような参照価値の低い会話が入っていないこと。
 
-## Common Follow-ups
+## よくある追加対応
 
-- If frame analysis is too shallow, update the frame prompt in `video_meeting_minutes/codex_tools.py`, then run "Reanalyze Frames Only".
-- If minutes structure is wrong, update the minutes prompt in `video_meeting_minutes/codex_tools.py`, then run "Regenerate Minutes Only".
-- If speaker separation is needed, ensure the full run uses default diarization or explicitly pass `--diarize`.
+- フレーム解析が浅い場合は、`video_meeting_minutes/codex_tools.py`のフレーム解析プロンプトを修正してから「フレーム解析だけ再実行」を行う。
+- 議事録の構造が悪い場合は、`video_meeting_minutes/codex_tools.py`の議事録プロンプトを修正してから「議事録だけ再生成」を行う。
+- 話者分離が必要な場合は、フル実行でデフォルトのdiarize ONを使う。明示するなら`--diarize`を付ける。

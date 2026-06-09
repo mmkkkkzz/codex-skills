@@ -21,7 +21,7 @@ def normalize_model(value: str | None) -> str | None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Re-run Codex frame analysis for an existing video-meeting-minutes output.")
+    parser = argparse.ArgumentParser(description="既存のvideo-meeting-minutes出力に対してCodexフレーム解析だけを再実行する。")
     parser.add_argument("--repo", type=Path, default=DEFAULT_REPO)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--timeout", type=float, default=1200)
@@ -52,7 +52,7 @@ def main() -> int:
     if analysis_json.exists():
         backup = analysis_json.with_name(f"frame_analysis.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
         shutil.copy2(analysis_json, backup)
-        print(f"Backed up previous analysis: {backup}", flush=True)
+        print(f"既存のフレーム解析をバックアップしました: {backup}", flush=True)
 
     raw_frames = json.loads(frames_json.read_text(encoding="utf-8"))
     frames: list[FrameEvent] = []
@@ -73,7 +73,7 @@ def main() -> int:
     vision_model = normalize_model(os.getenv("CODEX_VISION_MODEL") or base_model)
     vision_effort = os.getenv("CODEX_VISION_EFFORT") or os.getenv("CODEX_EFFORT") or "medium"
 
-    print(f"Reanalyzing {len(frames)} frames with model={vision_model}, effort={vision_effort}", flush=True)
+    print(f"{len(frames)}枚のフレームを再解析します。model={vision_model}, effort={vision_effort}", flush=True)
     with CodexAppServerClient(
         cwd=repo,
         model=base_model,
@@ -82,7 +82,7 @@ def main() -> int:
     ) as client:
         analyze_frames(frames, client=client, output_path=analysis_json, model=vision_model, effort=vision_effort)
 
-    print(f"Saved detailed frame analysis: {analysis_json}", flush=True)
+    print(f"詳細フレーム解析を保存しました: {analysis_json}", flush=True)
     return 0
 
 

@@ -21,7 +21,7 @@ def normalize_model(value: str | None) -> str | None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Regenerate minutes.md from an existing transcript and frame analysis.")
+    parser = argparse.ArgumentParser(description="既存の文字起こしとフレーム解析からminutes.mdだけを再生成する。")
     parser.add_argument("--repo", type=Path, default=DEFAULT_REPO)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--video-name", default=None)
@@ -58,7 +58,7 @@ def main() -> int:
     if minutes_path.exists():
         backup = minutes_path.with_name(f"minutes.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md")
         shutil.copy2(minutes_path, backup)
-        print(f"Backed up previous minutes: {backup}", flush=True)
+        print(f"既存の議事録をバックアップしました: {backup}", flush=True)
 
     transcript = json.loads(transcript_json.read_text(encoding="utf-8"))
     segments = transcript_segments(transcript)
@@ -84,7 +84,7 @@ def main() -> int:
     minutes_effort = os.getenv("CODEX_MINUTES_EFFORT") or os.getenv("CODEX_EFFORT") or "medium"
 
     print(
-        f"Regenerating minutes with {len(segments)} transcript segments and {len(analyses)} frame analyses",
+        f"議事録を再生成します。文字起こしセグメント={len(segments)}, フレーム解析={len(analyses)}",
         flush=True,
     )
     print(f"model={minutes_model}, effort={minutes_effort}", flush=True)
@@ -104,7 +104,7 @@ def main() -> int:
         )
 
     minutes_path.write_text(minutes + "\n", encoding="utf-8")
-    print(f"Saved regenerated minutes: {minutes_path}", flush=True)
+    print(f"再生成した議事録を保存しました: {minutes_path}", flush=True)
     return 0
 
 
