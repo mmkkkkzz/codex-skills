@@ -17,7 +17,7 @@ From the repository root:
 ./scripts/install.sh
 ```
 
-The script creates or refreshes symlinks for every directory under `skills/`.
+The script creates or refreshes symlinks for every directory under `skills/` and removes broken symlinks previously managed by this repository.
 If a target skill already exists as a normal directory, it is moved to a timestamped backup under `~/.codex/skills-backups/`.
 
 ## Update On Another Machine

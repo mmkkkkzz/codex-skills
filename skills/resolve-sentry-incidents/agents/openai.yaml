@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolve Sentry Incidents"
+  short_description: "Resolve a full Sentry queue through verified production"
+  default_prompt: "Use $resolve-sentry-incidents to root-fix every unresolved Sentry issue in the selected project and verify the fixes in production."

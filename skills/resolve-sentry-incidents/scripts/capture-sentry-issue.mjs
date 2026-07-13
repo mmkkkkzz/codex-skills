@@ -142,7 +142,7 @@ function selfTest() {
   try {
     const raw = {
       id: '1',
-      shortId: 'WELBASE-X',
+      shortId: 'PROJECT-X',
       title: 'secret title',
       culprit: '/api/test',
       event: {

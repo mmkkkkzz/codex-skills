@@ -171,11 +171,23 @@ function classifyEvidence({
   const codexReviewsAfterRequest = codexReviewsForHead.filter((review) =>
     isAtOrAfter(review.submitted_at, threshold),
   )
-  const codexReviewCommentsForHead = reviewComments.filter(
+  // GitHub can rewrite a review comment's commit_id when later commits move its
+  // diff position. The parent review's commit_id remains the reviewed SHA.
+  const reviewsById = new Map(reviews.map((review) => [Number(review.id), review]))
+  const codexRootReviewComments = reviewComments.filter(
     (comment) =>
       isCodexBot(comment.user?.login, botLogins) &&
-      String(comment.commit_id || '').toLowerCase() === head &&
       comment.in_reply_to_id == null,
+  )
+  const unmatchedCodexReviewComments = codexRootReviewComments.filter((comment) => {
+    const parentReview = reviewsById.get(Number(comment.pull_request_review_id))
+    return !parentReview || !isCodexBot(parentReview.user?.login, botLogins)
+  })
+  const codexReviewIdsForHead = new Set(
+    codexReviewsForHead.map((review) => Number(review.id)),
+  )
+  const codexReviewCommentsForHead = codexRootReviewComments.filter((comment) =>
+    codexReviewIdsForHead.has(Number(comment.pull_request_review_id)),
   )
 
   const codexReviewSummaries = codexReviewsForHead.filter(
@@ -195,6 +207,17 @@ function classifyEvidence({
         ...codexReviewCommentsForHead.map(serializeFinding),
         ...codexReviewSummaries.map(serializeReviewFinding),
       ],
+      codexReviewIds: codexReviewsForHead.map((review) => review.id),
+    }
+  }
+
+  if (unmatchedCodexReviewComments.length > 0) {
+    return {
+      state: 'pending',
+      reason: 'incomplete_parent_review_evidence',
+      acceptedSignal: null,
+      findings: [],
+      unmatchedReviewCommentIds: unmatchedCodexReviewComments.map((comment) => comment.id),
       codexReviewIds: codexReviewsForHead.map((review) => review.id),
     }
   }
@@ -439,12 +462,22 @@ function selfTest() {
           user: { login: DEFAULT_BOT_LOGINS[0] },
         },
       ],
+      reviews: [
+        {
+          id: 10,
+          body: 'Codex Review: automated suggestions follow',
+          submitted_at: '2026-07-13T00:01:00Z',
+          commit_id: head,
+          user: { login: DEFAULT_BOT_LOGINS[0] },
+        },
+      ],
       reviewComments: [
         {
           id: 1,
           body: 'Fix this',
           created_at: '2026-07-13T00:01:00Z',
           commit_id: head,
+          pull_request_review_id: 10,
           in_reply_to_id: null,
           user: { login: DEFAULT_BOT_LOGINS[0] },
         },
@@ -507,6 +540,92 @@ function selfTest() {
     html_url: 'https://example.test/comment',
     user: { login: DEFAULT_BOT_LOGINS[0] },
   }
+
+  const previousHead = 'fedcba9876543210fedcba9876543210fedcba98'
+  const historicalReview = {
+    id: 20,
+    body: 'Codex Review: automated suggestions follow',
+    submitted_at: '2026-07-12T23:59:00Z',
+    commit_id: previousHead,
+    user: { login: DEFAULT_BOT_LOGINS[0] },
+  }
+  const reboundHistoricalComment = {
+    id: 21,
+    body: 'Historical finding rebound by GitHub',
+    created_at: '2026-07-12T23:59:00Z',
+    commit_id: head,
+    original_commit_id: previousHead,
+    pull_request_review_id: historicalReview.id,
+    in_reply_to_id: null,
+    user: { login: DEFAULT_BOT_LOGINS[0] },
+  }
+
+  assert.equal(
+    classifyEvidence({
+      ...base,
+      issueComments: [matchingNoFindingsComment],
+      reviews: [historicalReview],
+      reviewComments: [reboundHistoricalComment],
+    }).state,
+    'clean',
+  )
+
+  assert.equal(
+    classifyEvidence({
+      ...base,
+      reviews: [historicalReview],
+      reviewComments: [reboundHistoricalComment],
+    }).state,
+    'pending',
+  )
+
+  const incompleteParentEvidence = classifyEvidence({
+    ...base,
+    issueComments: [matchingNoFindingsComment],
+    reviewComments: [
+      {
+        ...reboundHistoricalComment,
+        id: 22,
+        pull_request_review_id: 999,
+      },
+    ],
+  })
+  assert.equal(incompleteParentEvidence.state, 'pending')
+  assert.equal(incompleteParentEvidence.reason, 'incomplete_parent_review_evidence')
+
+  assert.equal(
+    classifyEvidence({
+      ...base,
+      prReactions: [
+        {
+          content: '+1',
+          created_at: '2026-07-13T00:01:00Z',
+          user: { login: DEFAULT_BOT_LOGINS[0] },
+        },
+      ],
+      reviews: [
+        {
+          id: 30,
+          body: 'Codex Review: automated suggestions follow',
+          submitted_at: '2026-07-13T00:01:00Z',
+          commit_id: head,
+          user: { login: DEFAULT_BOT_LOGINS[0] },
+        },
+      ],
+      reviewComments: [
+        {
+          id: 31,
+          body: 'Current review finding',
+          created_at: '2026-07-13T00:01:00Z',
+          commit_id: previousHead,
+          pull_request_review_id: 30,
+          in_reply_to_id: null,
+          user: { login: DEFAULT_BOT_LOGINS[0] },
+        },
+      ],
+    }).state,
+    'findings',
+  )
 
   assert.equal(
     classifyEvidence({
@@ -627,7 +746,7 @@ function selfTest() {
     'unavailable',
   )
 
-  printJson({ ok: true, tests: 13 })
+  printJson({ ok: true, tests: 18 })
 }
 
 function printHelp() {

@@ -8,6 +8,20 @@ TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "${SKILLS_DIR}" "${BACKUP_ROOT}"
 
+for target in "${SKILLS_DIR}"/*; do
+  [ -L "${target}" ] || continue
+
+  linked_source="$(readlink "${target}")"
+  case "${linked_source}" in
+    "${REPO_ROOT}/skills/"*)
+      if [ ! -e "${linked_source}" ]; then
+        unlink "${target}"
+        printf 'removed stale link %s -> %s\n' "${target}" "${linked_source}"
+      fi
+      ;;
+  esac
+done
+
 for source in "${REPO_ROOT}"/skills/*; do
   [ -d "${source}" ] || continue
 
