@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resolve Welbase Sentry Incidents"
+  short_description: "Resolve every live Welbase Sentry issue through production"
+  default_prompt: "Use $resolve-welbase-sentry-incidents to root-fix every unresolved Welbase Sentry issue and release the verified fixes through develop and main."
