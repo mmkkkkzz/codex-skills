@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>As-is / To-be Process Model</title>
+<style>
+  :root {
+    --brand: #315f86;
+    --accent: #d97706;
+    --asis: #315f86;
+    --tobe: #a16207;
+    --ink: #172033;
+    --muted: #617087;
+    --line: #d8e0ea;
+    --paper: #ffffff;
+    --page: #eef2f7;
+    --danger: #b42318;
+    --danger-soft: #fff1f0;
+    --success: #087443;
+    --success-soft: #eaf8f1;
+    --warning: #a15c00;
+    --warning-soft: #fff7e8;
+    --info-soft: #eef6ff;
+    --shadow: 0 10px 30px rgba(21, 32, 51, .10);
+    --font: Inter, "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--page);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  button, textarea, select, input { font: inherit; }
+  button { cursor: pointer; }
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 8px 18px;
+    color: #fff;
+    background: rgba(23, 32, 51, .97);
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(10px);
+  }
+  .toolbar__brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+  .toolbar__mark {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+    font-weight: 800;
+    letter-spacing: -.04em;
+  }
+  .toolbar__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+  .toolbar__version { color: #b9c6d8; font-size: 11px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid #cad4e2;
+    border-radius: 8px;
+    color: var(--ink);
+    background: #fff;
+    font-weight: 650;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #f5f8fb; }
+  .btn:focus-visible { outline: 3px solid rgba(49,95,134,.25); outline-offset: 2px; }
+  .btn--toolbar { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); }
+  .btn--toolbar:hover { background: rgba(255,255,255,.16); }
+  .btn--primary { color: #fff; background: var(--brand); border-color: var(--brand); }
+  .btn--primary:hover { filter: brightness(.94); background: var(--brand); }
+  .btn--danger { color: #fff; background: var(--danger); border-color: var(--danger); }
+  .zoom-value { min-width: 52px; text-align: center; color: #dce6f3; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .shell { width: min(100%, 1800px); margin: 0 auto; padding: 22px; }
+  .hero, .state-card, .section-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+  .hero { overflow: hidden; margin-bottom: 18px; }
+  .hero__bar { height: 6px; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+  .hero__content { padding: 22px 24px 20px; }
+  .hero__top { display: flex; align-items: flex-start; gap: 20px; }
+  .hero__titles { flex: 1; min-width: 0; }
+  .hero h1 { margin: 0; font-size: clamp(22px, 2.3vw, 32px); line-height: 1.25; letter-spacing: -.035em; }
+  .hero__subtitle { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+  .meta-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 480px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    padding: 3px 8px;
+    border: 1px solid #d6deea;
+    border-radius: 999px;
+    color: #38465b;
+    background: #f8fafc;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .chip--danger { color: var(--danger); background: var(--danger-soft); border-color: #f3c5c1; }
+  .chip--success { color: var(--success); background: var(--success-soft); border-color: #b9e4cf; }
+  .chip--warning { color: var(--warning); background: var(--warning-soft); border-color: #f0d3a2; }
+  .chip--info { color: #235a91; background: var(--info-soft); border-color: #c8dff4; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1fr 150px;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .metric {
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #e1e7ef;
+    border-radius: 10px;
+    background: #fbfcfe;
+  }
+  .metric__label { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .metric__value { margin-top: 5px; font-size: 13px; font-weight: 700; }
+  .metric__value--score { display: flex; align-items: baseline; gap: 5px; font-size: 24px; color: var(--brand); }
+  .metric__value--score small { color: var(--muted); font-size: 11px; }
+  .quality-bar { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #e5ebf2; }
+  .quality-bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--brand)); }
+  .notice {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid #f0d3a2;
+    border-radius: 9px;
+    color: #704200;
+    background: var(--warning-soft);
+    font-size: 12px;
+  }
+  .notice strong { white-space: nowrap; }
+  .state-card { overflow: hidden; margin: 18px 0; }
+  .state-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 58px;
+    padding: 11px 16px;
+    color: #fff;
+  }
+  .state-head--asis { background: linear-gradient(100deg, var(--asis), #4d799d); }
+  .state-head--tobe { background: linear-gradient(100deg, var(--tobe), #c27b12); }
+  .state-head--neutral { background: linear-gradient(100deg, #4e5a6c, #6a778b); }
+  .state-head__label { min-width: 90px; font-size: 20px; font-weight: 850; letter-spacing: -.02em; }
+  .state-head__summary { flex: 1; opacity: .94; font-size: 12px; }
+  .state-head__actions { display: flex; gap: 6px; }
+  .state-head .btn { color: #fff; background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.28); }
+  .state-head .btn:hover { background: rgba(255,255,255,.20); }
+  .diagram-scroll {
+    position: relative;
+    overflow: auto;
+    min-height: 340px;
+    background:
+      linear-gradient(#eef2f6 1px, transparent 1px),
+      linear-gradient(90deg, #eef2f6 1px, transparent 1px),
+      #f8fafc;
+    background-size: 24px 24px;
+    overscroll-behavior: contain;
+  }
+  .diagram-stage { padding: 18px; min-width: 100%; }
+  .diagram-svg { display: block; max-width: none; filter: drop-shadow(0 3px 8px rgba(21,32,51,.07)); transition: width .15s ease, height .15s ease; }
+  .change-section { margin: 18px 0; }
+  .change-section__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .change-section__head h2 { margin: 0; font-size: 17px; }
+  .change-section__head p { margin: 0; color: var(--muted); font-size: 12px; }
+  .change-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+  .change-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 116px;
+    padding: 14px 14px 12px 16px;
+    border: 1px solid #ecd0a9;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #fffaf2, #fff);
+  }
+  .change-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--accent); }
+  .change-card__top { display: flex; align-items: center; gap: 8px; }
+  .change-id { color: #8a4b00; font-size: 11px; font-weight: 900; }
+  .change-type { margin-left: auto; padding: 2px 6px; border-radius: 999px; color: #8a4b00; background: #ffe8c1; font-size: 9px; font-weight: 850; text-transform: uppercase; }
+  .change-card h3 { margin: 7px 0 5px; font-size: 13px; line-height: 1.35; }
+  .change-card p { margin: 0; color: #536177; font-size: 11px; }
+  .trace-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .trace-pill { padding: 2px 6px; border: 1px solid #dce3eb; border-radius: 999px; color: #4b5a70; background: #fff; font-size: 9px; font-weight: 750; }
+  .section-card { margin: 18px 0; overflow: hidden; }
+  .section-card__head { padding: 16px 18px 10px; }
+  .section-card__head h2 { margin: 0; font-size: 17px; }
+  .section-card__head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 14px 8px; border-bottom: 1px solid var(--line); }
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    color: #59677c;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .tab:hover { background: #f1f5f9; }
+  .tab.is-active { color: #fff; background: var(--brand); }
+  .tab-panel { display: none; padding: 16px 18px 20px; }
+  .tab-panel.is-active { display: block; }
+  .table-wrap { overflow-x: auto; border: 1px solid #e0e6ee; border-radius: 9px; }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: 11px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid #e5eaf0; vertical-align: top; text-align: left; }
+  th { position: sticky; top: 0; z-index: 1; color: #445168; background: #f5f7fa; font-size: 10px; letter-spacing: .02em; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: #fafcff; }
+  .cell-id { white-space: nowrap; color: var(--brand); font-weight: 850; }
+  .cell-title { min-width: 180px; font-weight: 750; }
+  .cell-muted { color: var(--muted); }
+  .status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #98a2b3; }
+  .status-dot--open, .status-dot--critical, .status-dot--high { background: var(--danger); }
+  .status-dot--proposed, .status-dot--medium, .status-dot--review { background: var(--accent); }
+  .status-dot--approved, .status-dot--confirmed, .status-dot--complete, .status-dot--measured { background: var(--success); }
+  .cards-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+  .info-card { padding: 12px 14px; border: 1px solid #e0e6ee; border-radius: 9px; background: #fbfcfe; }
+  .info-card__top { display: flex; align-items: center; gap: 8px; }
+  .info-card h3 { margin: 7px 0 4px; font-size: 13px; }
+  .info-card p { margin: 0; color: var(--muted); font-size: 11px; }
+  .info-card--danger { border-color: #efc4c0; background: var(--danger-soft); }
+  .info-card--warning { border-color: #ecd0a9; background: var(--warning-soft); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 14px 18px 18px; border-top: 1px solid var(--line); color: #526076; font-size: 10px; }
+  .legend__item { display: inline-flex; align-items: center; gap: 6px; }
+  .legend__shape { width: 30px; height: 16px; border: 2px solid #4f637b; border-radius: 5px; background: #fff; }
+  .legend__shape--decision { width: 18px; height: 18px; transform: rotate(45deg); border-radius: 2px; }
+  .legend__shape--system { background: #eef6ff; border-color: #3f78a7; }
+  .legend__shape--unknown { border-style: dashed; }
+  .legend__line { width: 32px; height: 0; border-top: 2px solid #4d647d; }
+  .legend__line--data { border-top-color: #2b83a6; border-top-style: dashed; }
+  .legend__line--integration { border-top-color: #16815a; border-top-width: 3px; }
+  .legend__line--exception { border-top-color: #c13a30; border-top-style: dashed; }
+  .legend__line--control { border-top-color: #7456a6; border-top-style: dotted; }
+  .footer { display: flex; justify-content: space-between; gap: 20px; padding: 8px 3px 24px; color: #738096; font-size: 10px; }
+  .drawer-backdrop, .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 180;
+    display: none;
+    background: rgba(12, 20, 33, .48);
+    backdrop-filter: blur(2px);
+  }
+  .drawer-backdrop.is-open, .modal-backdrop.is-open { display: block; }
+  .drawer {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 190;
+    width: min(440px, 94vw);
+    overflow-y: auto;
+    transform: translateX(102%);
+    transition: transform .18s ease;
+    background: #fff;
+    box-shadow: -18px 0 50px rgba(12,20,33,.2);
+  }
+  .drawer.is-open { transform: translateX(0); }
+  .drawer__head { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; gap: 12px; padding: 16px; color: #fff; background: var(--brand); }
+  .drawer__head-main { flex: 1; min-width: 0; }
+  .drawer__head h2 { margin: 3px 0 0; font-size: 18px; line-height: 1.3; }
+  .drawer__head small { opacity: .8; font-size: 10px; }
+  .drawer__close { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; color: #fff; background: rgba(255,255,255,.1); }
+  .drawer__body { padding: 16px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .detail-item { padding: 9px 10px; border: 1px solid #e1e7ef; border-radius: 8px; background: #fafbfd; }
+  .detail-item__label { color: var(--muted); font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
+  .detail-item__value { margin-top: 4px; font-size: 11px; font-weight: 700; overflow-wrap: anywhere; }
+  .detail-block { margin: 14px 0; }
+  .detail-block h3 { margin: 0 0 6px; font-size: 12px; }
+  .detail-block p { margin: 0; color: #4f5d72; font-size: 12px; white-space: pre-wrap; }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .modal {
+    position: fixed;
+    inset: 5vh 5vw;
+    z-index: 210;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 30px 80px rgba(12,20,33,.3);
+  }
+  .modal.is-open { display: flex; }
+  .modal__head { display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: #fff; background: #172033; }
+  .modal__head h2 { margin: 0; font-size: 15px; }
+  .modal__head p { margin: 0; color: #b9c6d8; font-size: 10px; }
+  .modal__head-main { flex: 1; }
+  .modal__body { display: grid; grid-template-columns: 1fr 300px; min-height: 0; flex: 1; }
+  #json-editor { width: 100%; height: 100%; min-height: 420px; resize: none; border: 0; border-right: 1px solid #dce3eb; padding: 15px; color: #dbe7f5; background: #101827; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.55; tab-size: 2; outline: none; }
+  .modal__side { overflow-y: auto; padding: 14px; background: #f7f9fc; }
+  .validation-list { margin: 0; padding-left: 17px; font-size: 11px; }
+  .validation-list li { margin: 4px 0; }
+  .validation-list--error { color: var(--danger); }
+  .validation-list--warning { color: #8a4b00; }
+  .modal__foot { display: flex; justify-content: flex-end; gap: 8px; padding: 11px 14px; border-top: 1px solid #dce3eb; background: #fff; }
+  .empty { padding: 26px; color: var(--muted); text-align: center; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  @media (max-width: 980px) {
+    .shell { padding: 12px; }
+    .toolbar { padding: 7px 10px; overflow-x: auto; }
+    .toolbar__title { max-width: 220px; }
+    .hero__top { flex-direction: column; }
+    .meta-chips { justify-content: flex-start; max-width: none; }
+    .hero-grid { grid-template-columns: 1fr 1fr; }
+    .modal__body { grid-template-columns: 1fr; }
+    .modal__side { max-height: 220px; }
+    #json-editor { border-right: 0; border-bottom: 1px solid #dce3eb; }
+  }
+  @media (max-width: 620px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .state-head { align-items: flex-start; flex-wrap: wrap; }
+    .state-head__summary { flex-basis: 100%; order: 3; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .modal { inset: 2vh 2vw; }
+  }
+  @page { size: A3 landscape; margin: 8mm; }
+  @media print {
+    body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .toolbar, .state-head__actions, .tabs, .drawer, .drawer-backdrop, .modal, .modal-backdrop { display: none !important; }
+    .shell { width: 100%; padding: 0; }
+    .hero, .state-card, .section-card { box-shadow: none; break-inside: avoid; }
+    .hero { margin-bottom: 7mm; }
+    .state-card { margin: 7mm 0; }
+    .diagram-scroll { overflow: visible; min-height: 0; background: #fff; }
+    .diagram-stage { padding: 8px; }
+    .diagram-svg { width: 100% !important; height: auto !important; }
+    .tab-panel { display: block !important; padding-top: 8px; break-inside: auto; }
+    .tab-panel + .tab-panel { border-top: 1px solid #dce3eb; }
+    .table-wrap { overflow: visible; }
+    table { min-width: 0; font-size: 9px; }
+    th { position: static; }
+    .footer { padding-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+  <div id="toolbar" class="toolbar"></div>
+  <main id="app" class="shell"></main>
+
+  <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>
+  <aside id="details-drawer" class="drawer" aria-label="要素詳細">
+    <div id="details-content"></div>
+  </aside>
+
+  <div id="modal-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+  <section id="json-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="json-modal-title">
+    <header class="modal__head">
+      <div class="modal__head-main">
+        <h2 id="json-modal-title">JSONを編集</h2>
+        <p>適用後はブラウザ内だけで再描画されます。正本として残す場合はJSONを保存してください。</p>
+      </div>
+      <button id="json-modal-close" class="drawer__close" aria-label="閉じる">×</button>
+    </header>
+    <div class="modal__body">
+      <textarea id="json-editor" spellcheck="false" aria-label="プロセスモデルJSON"></textarea>
+      <aside class="modal__side">
+        <h3 style="margin:0 0 8px;font-size:12px">検証結果</h3>
+        <div id="json-validation"></div>
+      </aside>
+    </div>
+    <footer class="modal__foot">
+      <button id="json-download" class="btn">JSONを保存</button>
+      <button id="json-cancel" class="btn">キャンセル</button>
+      <button id="json-apply" class="btn btn--primary">検証して適用</button>
+    </footer>
+  </section>
+
+  <script id="process-model" type="application/json">__MODEL_JSON__</script>
+  <script>
+  (() => {
+    'use strict';
+
+    const APP_VERSION = '__APP_VERSION__';
+    const NS = 'http://www.w3.org/2000/svg';
+    let model = JSON.parse(document.getElementById('process-model').textContent);
+    let zoom = 1;
+    const stateLayouts = new Map();
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+    const esc = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+    const arr = (value) => Array.isArray(value) ? value : [];
+    const nonempty = (value, fallback = '—') => (value === null || value === undefined || value === '') ? fallback : String(value);
+    const byId = (items) => new Map(arr(items).map(item => [item.id, item]));
+    const safeFilename = (name) => String(name || 'asis-tobe').replace(/[\\/:*?"<>|\s]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'asis-tobe';
+    const today = () => new Date().toISOString().slice(0, 10);
+
+    function setTheme() {
+      const theme = model.view?.theme || {};
+      const root = document.documentElement;
+      root.style.setProperty('--brand', theme.brandColor || '#315f86');
+      root.style.setProperty('--accent', theme.accentColor || '#d97706');
+      root.style.setProperty('--asis', theme.asisColor || '#315f86');
+      root.style.setProperty('--tobe', theme.tobeColor || '#a16207');
+      root.style.setProperty('--font', theme.fontFamily || 'Inter, "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, sans-serif');
+    }
+
+    function validateModel(candidate) {
+      const errors = [];
+      const warnings = [];
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+        return { errors: ['トップレベルはJSONオブジェクトである必要があります。'], warnings };
+      }
+      if (!candidate.meta?.title) errors.push('meta.title がありません。');
+      if (!candidate.meta?.version) errors.push('meta.version がありません。');
+      if (!candidate.meta?.purpose) warnings.push('meta.purpose がありません。');
+      if (!candidate.meta?.scope?.start || !candidate.meta?.scope?.end) warnings.push('meta.scope.start / end が不足しています。');
+      if (!Array.isArray(candidate.states) || candidate.states.length < 2) errors.push('states は2件以上必要です。');
+
+      function makeRegistry(scopeLabel) {
+        const ids = new Map();
+        return (id, path) => {
+          if (!id) { errors.push(`${path} に id がありません。`); return; }
+          if (ids.has(id)) errors.push(`${scopeLabel}でIDが重複しています: ${id} (${ids.get(id)} / ${path})`);
+          else ids.set(id, path);
+        };
+      }
+
+      // Lane, stage, and group IDs are deliberately scoped to each state so
+      // As-is and To-be can share the same comparison axes. Nodes and edges
+      // are global because pain points and changes refer to them directly.
+      const registerTopLevel = makeRegistry('トップレベル');
+      const registerState = makeRegistry('states');
+      const registerNode = makeRegistry('nodes');
+      const registerEdge = makeRegistry('edges');
+      arr(candidate.meta?.sources).forEach((x,i) => registerTopLevel(x.id, `meta.sources[${i}]`));
+      arr(candidate.meta?.assumptions).forEach((x,i) => registerTopLevel(x.id, `meta.assumptions[${i}]`));
+      arr(candidate.meta?.conflicts).forEach((x,i) => registerTopLevel(x.id, `meta.conflicts[${i}]`));
+      ['objectives','painPoints','changes','kpis','risks','openQuestions','implementation'].forEach(key => {
+        arr(candidate[key]).forEach((x,i) => registerTopLevel(x.id, `${key}[${i}]`));
+      });
+
+      arr(candidate.states).forEach((state, si) => {
+        registerState(state.id, `states[${si}]`);
+        const laneIds = new Set(arr(state.lanes).map(x => x.id));
+        const stageIds = new Set(arr(state.stages).map(x => x.id));
+        const nodeIds = new Set();
+        const registerLane = makeRegistry(`${state.label || state.id || `states[${si}]`} のlanes`);
+        const registerStage = makeRegistry(`${state.label || state.id || `states[${si}]`} のstages`);
+        const registerGroup = makeRegistry(`${state.label || state.id || `states[${si}]`} のgroups`);
+        arr(state.lanes).forEach((x,i) => registerLane(x.id, `states[${si}].lanes[${i}]`));
+        arr(state.stages).forEach((x,i) => registerStage(x.id, `states[${si}].stages[${i}]`));
+        arr(state.groups).forEach((x,i) => registerGroup(x.id, `states[${si}].groups[${i}]`));
+        arr(state.nodes).forEach((node, ni) => {
+          registerNode(node.id, `states[${si}].nodes[${ni}]`);
+          nodeIds.add(node.id);
+          if (!node.label) errors.push(`${node.id || `node[${ni}]`} に label がありません。`);
+          if (!laneIds.has(node.lane)) errors.push(`${node.id}: lane '${node.lane}' が存在しません。`);
+          if (!stageIds.has(node.stage)) errors.push(`${node.id}: stage '${node.stage}' が存在しません。`);
+          if (!node.type) warnings.push(`${node.id}: type がありません。`);
+          if (!node.mode) warnings.push(`${node.id}: mode がありません。`);
+          if (String(node.label || '').length > 42) warnings.push(`${node.id}: ラベルが長すぎます。detailへの分離を検討してください。`);
+        });
+        arr(state.edges).forEach((edge, ei) => {
+          registerEdge(edge.id, `states[${si}].edges[${ei}]`);
+          if (!nodeIds.has(edge.from)) errors.push(`${edge.id}: from '${edge.from}' が存在しません。`);
+          if (!nodeIds.has(edge.to)) errors.push(`${edge.id}: to '${edge.to}' が存在しません。`);
+        });
+        const startCount = arr(state.nodes).filter(n => n.type === 'start').length;
+        const endCount = arr(state.nodes).filter(n => n.type === 'end').length;
+        if (!startCount) warnings.push(`${state.label || state.id}: startノードがありません。`);
+        if (!endCount) warnings.push(`${state.label || state.id}: endノードがありません。`);
+        if (arr(state.lanes).length > 6) warnings.push(`${state.label || state.id}: 7レーン以上です。概要図と詳細図への分割を検討してください。`);
+        if (arr(state.stages).length > 8) warnings.push(`${state.label || state.id}: 9工程以上です。分割を検討してください。`);
+        if (arr(state.nodes).length > 35) warnings.push(`${state.label || state.id}: 36ノード以上です。分割を検討してください。`);
+      });
+
+      const allNodeIds = new Set(arr(candidate.states).flatMap(s => arr(s.nodes).map(n => n.id)));
+      const allEdgeIds = new Set(arr(candidate.states).flatMap(s => arr(s.edges).map(e => e.id)));
+      const sourceIds = new Set(arr(candidate.meta?.sources).map(s => s.id));
+      const painIds = new Set(arr(candidate.painPoints).map(p => p.id));
+      const objectiveIds = new Set(arr(candidate.objectives).map(o => o.id));
+      const changeIds = new Set(arr(candidate.changes).map(c => c.id));
+      const kpiIds = new Set(arr(candidate.kpis).map(k => k.id));
+      const riskIds = new Set(arr(candidate.risks).map(r => r.id));
+
+      arr(candidate.painPoints).forEach(p => {
+        arr(p.nodeIds).forEach(id => { if (!allNodeIds.has(id)) errors.push(`${p.id}: nodeIds '${id}' が存在しません。`); });
+        arr(p.edgeIds).forEach(id => { if (!allEdgeIds.has(id)) errors.push(`${p.id}: edgeIds '${id}' が存在しません。`); });
+        arr(p.sourceIds).forEach(id => { if (!sourceIds.has(id)) warnings.push(`${p.id}: sourceId '${id}' が存在しません。`); });
+        if (!arr(p.nodeIds).length && !arr(p.edgeIds).length) warnings.push(`${p.id}: ノードまたはエッジに紐付いていません。`);
+      });
+      arr(candidate.changes).forEach(c => {
+        arr(c.fromNodeIds).concat(arr(c.toNodeIds)).forEach(id => { if (!allNodeIds.has(id)) errors.push(`${c.id}: nodeId '${id}' が存在しません。`); });
+        arr(c.painPointIds).forEach(id => { if (!painIds.has(id)) errors.push(`${c.id}: painPointId '${id}' が存在しません。`); });
+        arr(c.objectiveIds).forEach(id => { if (!objectiveIds.has(id)) errors.push(`${c.id}: objectiveId '${id}' が存在しません。`); });
+        arr(c.kpiIds).forEach(id => { if (!kpiIds.has(id)) errors.push(`${c.id}: kpiId '${id}' が存在しません。`); });
+        arr(c.riskIds).forEach(id => { if (!riskIds.has(id)) errors.push(`${c.id}: riskId '${id}' が存在しません。`); });
+        if (!arr(c.painPointIds).length && !arr(c.objectiveIds).length) warnings.push(`${c.id}: 課題または目的に紐付いていません。`);
+      });
+      arr(candidate.kpis).forEach(k => {
+        arr(k.linkedChangeIds).forEach(id => { if (!changeIds.has(id)) errors.push(`${k.id}: changeId '${id}' が存在しません。`); });
+      });
+      return { errors, warnings };
+    }
+
+    function qualityScore(candidate) {
+      let score = 0;
+      const details = [];
+      const states = arr(candidate.states);
+      const nodes = states.flatMap(s => arr(s.nodes));
+      const sourceCoverage = nodes.length ? nodes.filter(n => arr(n.sourceIds).length).length / nodes.length : 0;
+      const pain = arr(candidate.painPoints);
+      const changes = arr(candidate.changes);
+      const kpis = arr(candidate.kpis);
+      const blocking = arr(candidate.openQuestions).filter(q => q.blocking && q.status === 'open').length;
+
+      const add = (points, ok, label) => { if (ok) score += points; details.push({label, ok, points}); };
+      add(10, Boolean(candidate.meta?.purpose && candidate.meta?.audience?.length), '目的・読者');
+      add(10, Boolean(candidate.meta?.scope?.start && candidate.meta?.scope?.end), 'スコープ');
+      add(10, states.some(s => s.id === 'asis') && states.some(s => s.id === 'tobe'), 'As-is / To-be');
+      add(10, states.every(s => arr(s.nodes).some(n => n.type === 'start') && arr(s.nodes).some(n => n.type === 'end')), '開始・終了');
+      add(10, nodes.length > 0 && nodes.every(n => n.lane && n.stage && n.mode), '責任・工程・実行形態');
+      add(10, pain.length > 0 && pain.every(p => arr(p.nodeIds).length || arr(p.edgeIds).length), '課題の配置');
+      add(15, changes.length > 0 && changes.every(c => arr(c.painPointIds).length || arr(c.objectiveIds).length), '課題→変更');
+      add(10, changes.length > 0 && changes.filter(c => arr(c.kpiIds).length).length / changes.length >= .8, '変更→KPI');
+      add(10, sourceCoverage >= .7, '根拠カバレッジ');
+      add(5, blocking === 0, 'ブロッカー解消');
+      return { score, sourceCoverage, blocking, details };
+    }
+
+    function statusChip(value, extraClass = '') {
+      const v = String(value || 'unknown');
+      const map = {
+        draft: ['Draft', 'warning'], review: ['Review', 'info'], approved: ['Approved', 'success'], archived: ['Archived', ''],
+        internal: ['Internal', 'info'], confidential: ['Confidential', 'warning'], restricted: ['Restricted', 'danger'], public: ['Public', 'success']
+      };
+      const [label, kind] = map[v] || [v, ''];
+      return `<span class="chip ${kind ? `chip--${kind}` : ''} ${extraClass}">${esc(label)}</span>`;
+    }
+
+    function renderToolbar() {
+      const toolbar = $('#toolbar');
+      toolbar.innerHTML = `
+        <div class="toolbar__brand">
+          <div class="toolbar__mark">A/T</div>
+          <div>
+            <div class="toolbar__title">${esc(model.meta?.title || 'As-is / To-be')}</div>
+            <div class="toolbar__version">v${esc(model.meta?.version || '0.0.0')} · renderer ${APP_VERSION}</div>
+          </div>
+        </div>
+        <button class="btn btn--toolbar" data-action="zoom-out" title="縮小">−</button>
+        <span class="zoom-value" id="zoom-value">100%</span>
+        <button class="btn btn--toolbar" data-action="zoom-in" title="拡大">＋</button>
+        <button class="btn btn--toolbar" data-action="fit">幅に合わせる</button>
+        <button class="btn btn--toolbar" data-action="edit-json">JSON編集</button>
+        <button class="btn btn--toolbar" data-action="download-json">JSON保存</button>
+        <button class="btn btn--toolbar" data-action="print">印刷 / PDF</button>
+      `;
+    }
+
+    function renderHero() {
+      const q = qualityScore(model);
+      const blockingText = q.blocking ? `${q.blocking}件のブロッカーあり` : 'ブロッカーなし';
+      const sourceText = `${arr(model.meta?.sources).length}件 / ノード根拠 ${(q.sourceCoverage * 100).toFixed(0)}%`;
+      const audience = arr(model.meta?.audience).join(' / ') || '未設定';
+      const scope = `${nonempty(model.meta?.scope?.start)} → ${nonempty(model.meta?.scope?.end)}`;
+      const notice = q.blocking || arr(model.meta?.assumptions).some(a => a.status === 'unverified')
+        ? `<div class="notice"><strong>要確認</strong><span>${q.blocking ? `${q.blocking}件のブロッカー質問があります。` : ''}${arr(model.meta?.assumptions).filter(a => a.status === 'unverified').length ? ` 未確認の仮定が${arr(model.meta?.assumptions).filter(a => a.status === 'unverified').length}件あります。` : ''} 詳細タブで確認してください。</span></div>`
+        : '';
+      return `
+        <section class="hero">
+          <div class="hero__bar"></div>
+          <div class="hero__content">
+            <div class="hero__top">
+              <div class="hero__titles">
+                <h1>${esc(model.meta?.title || 'As-is / To-be')}</h1>
+                <p class="hero__subtitle">${esc(model.meta?.subtitle || model.meta?.purpose || '')}</p>
+              </div>
+              <div class="meta-chips">
+                ${statusChip(model.meta?.status)}
+                ${statusChip(model.meta?.confidentiality)}
+                <span class="chip">v${esc(model.meta?.version || '0.0.0')}</span>
+                <span class="chip">更新 ${esc(model.meta?.updatedAt || model.meta?.createdAt || '—')}</span>
+              </div>
+            </div>
+            <div class="hero-grid">
+              <div class="metric">
+                <div class="metric__label">Purpose</div>
+                <div class="metric__value">${esc(model.meta?.purpose || '未設定')}</div>
+              </div>
+              <div class="metric">
+                <div class="metric__label">Scope</div>
+                <div class="metric__value">${esc(scope)}</div>
+              </div>
+              <div class="metric">
+                <div class="metric__label">Audience / Sources</div>
+                <div class="metric__value">${esc(audience)}<br><span style="color:var(--muted);font-size:10px">${esc(sourceText)} · ${esc(blockingText)}</span></div>
+              </div>
+              <div class="metric">
+                <div class="metric__label">Quality heuristic</div>
+                <div class="metric__value metric__value--score">${q.score}<small>/ 100</small></div>
+                <div class="quality-bar"><span style="width:${q.score}%"></span></div>
+              </div>
+            </div>
+            ${notice}
+          </div>
+        </section>
+      `;
+    }
+
+    function stateThemeClass(state) {
+      const t = state.theme || state.id;
+      return t === 'asis' ? 'asis' : t === 'tobe' ? 'tobe' : 'neutral';
+    }
+
+    function nodeHeight(node) {
+      if (Number.isFinite(node.layout?.height)) return Math.max(44, Math.min(220, node.layout.height));
+      if (node.type === 'start' || node.type === 'end') return 58;
+      if (node.type === 'decision') return 94;
+      if (node.type === 'note') return 68;
+      return 80;
+    }
+
+    function computeLayout(state) {
+      const C = {
+        laneLabelW: 176,
+        stageW: 232,
+        headerH: 62,
+        minLaneH: 132,
+        nodeGap: 14,
+        padY: 22,
+        nodePadX: 16,
+        edgeMargin: 52,
+        bottomPad: 24
+      };
+      const lanes = arr(state.lanes);
+      const stages = arr(state.stages);
+      const nodes = arr(state.nodes);
+      const laneIndex = new Map(lanes.map((l,i) => [l.id, i]));
+      const stageIndex = new Map(stages.map((s,i) => [s.id, i]));
+      const cells = new Map();
+      nodes.forEach(node => {
+        const key = `${node.lane}::${node.stage}`;
+        if (!cells.has(key)) cells.set(key, []);
+        cells.get(key).push(node);
+      });
+      cells.forEach(list => list.sort((a,b) => (Number(a.order || 1) - Number(b.order || 1)) || String(a.id).localeCompare(String(b.id))));
+
+      const laneHeights = lanes.map(lane => {
+        let max = 0;
+        stages.forEach(stage => {
+          const list = cells.get(`${lane.id}::${stage.id}`) || [];
+          const h = list.reduce((sum, n, idx) => sum + nodeHeight(n) + (idx ? C.nodeGap : 0), 0);
+          max = Math.max(max, h);
+        });
+        return Math.max(C.minLaneH, max + C.padY * 2);
+      });
+      const laneTops = [];
+      let cursorY = C.headerH;
+      laneHeights.forEach(h => { laneTops.push(cursorY); cursorY += h; });
+      const width = C.laneLabelW + stages.length * C.stageW + 18;
+      const height = cursorY + C.edgeMargin + C.bottomPad;
+      const positions = new Map();
+
+      lanes.forEach((lane, li) => {
+        stages.forEach((stage, si) => {
+          const list = cells.get(`${lane.id}::${stage.id}`) || [];
+          let y = laneTops[li] + C.padY;
+          list.forEach(node => {
+            const span = Math.max(1, Math.min(4, Number(node.layout?.stageSpan || 1)));
+            const w = C.stageW * span - C.nodePadX * 2;
+            const h = nodeHeight(node);
+            const x = C.laneLabelW + si * C.stageW + C.nodePadX + Number(node.layout?.dx || 0);
+            const pos = {
+              x,
+              y: y + Number(node.layout?.dy || 0),
+              w,
+              h,
+              cx: x + w / 2,
+              cy: y + Number(node.layout?.dy || 0) + h / 2,
+              laneIndex: li,
+              stageIndex: si,
+              node
+            };
+            positions.set(node.id, pos);
+            y += h + C.nodeGap;
+          });
+        });
+      });
+      return { C, lanes, stages, laneIndex, stageIndex, laneHeights, laneTops, positions, width, height };
+    }
+
+    function svgStyleText() {
+      return `
+        .s-bg{fill:#fff;stroke:#cfd9e5;stroke-width:1}.s-header{fill:#edf2f7;stroke:#cfd9e5;stroke-width:1}.s-corner{fill:#e4eaf1;stroke:#c4cfdd;stroke-width:1}
+        .s-stage-label{font:700 13px var(--font);fill:#334155}.s-lane-bg-even{fill:#fbfcfe}.s-lane-bg-odd{fill:#f4f7fa}.s-lane-label-bg{fill:#eef3f8;stroke:#d0dae6;stroke-width:1}
+        .s-lane-label{font:800 13px var(--font);fill:#243247}.s-lane-group{font:600 9px var(--font);fill:#718096}.s-grid{stroke:#d8e1ec;stroke-width:1}
+        .s-group{fill:rgba(49,95,134,.035);stroke:#6e8fab;stroke-width:1.5;stroke-dasharray:7 5}.s-group-tobe{fill:rgba(161,98,7,.04);stroke:#b88634}.s-group-label-bg{fill:#fff;stroke:#d8e1ec}.s-group-label{font:800 10px var(--font);fill:#4a5d73}
+        .edge{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.edge-sequence{stroke:#47617b}.edge-data{stroke:#2b83a6;stroke-dasharray:7 5}.edge-integration{stroke:#16815a;stroke-width:3}.edge-exception{stroke:#c13a30;stroke-dasharray:8 5}.edge-control{stroke:#7456a6;stroke-dasharray:2 5;stroke-width:2.5}.edge-manual-handoff{stroke:#6b7280;stroke-dasharray:5 4}
+        .edge-label-bg{fill:#fff;stroke:#d9e1ea;stroke-width:1}.edge-label{font:700 9px var(--font);fill:#475569}
+        .node{cursor:pointer}.node:hover .node-main{filter:brightness(.985);stroke-width:2.5}.node-main{stroke-width:1.7;filter:url(#shadow)}
+        .node-activity{fill:#fff;stroke:#55708a}.node-start{fill:#eaf5ff;stroke:#2f6f9d}.node-end{fill:#eaf8f1;stroke:#16815a}.node-decision{fill:#fff8e8;stroke:#a96800}.node-system{fill:#eef6ff;stroke:#3f78a7}.node-data{fill:#eef9fb;stroke:#2b83a6}.node-document{fill:#fff;stroke:#687b91}.node-control{fill:#f5f0ff;stroke:#7456a6}.node-external{fill:#fff;stroke:#66758a;stroke-dasharray:6 4}.node-milestone{fill:#ecf9f2;stroke:#16815a}.node-note{fill:#fffdf2;stroke:#a27a1b;stroke-dasharray:4 3}
+        .node-unconfirmed{stroke-dasharray:6 4}.node-label{font:800 12px var(--font);fill:#172033;text-anchor:middle}.node-id{font:800 8.5px var(--font);fill:#66758a}.node-type{font:850 8px var(--font);fill:#526176;letter-spacing:.04em}.node-mode-text{font:850 8px var(--font);fill:#fff}.node-mode-manual{fill:#536579}.node-mode-automated{fill:#16815a}.node-mode-hybrid{fill:#a15c00}.node-mode-unknown{fill:#7a8190}.node-badge-pain{fill:#b42318}.node-badge-change{fill:#d97706}.node-badge-risk{fill:#7456a6}.node-badge-text{font:850 7.5px var(--font);fill:#fff;text-anchor:middle}.node-fold{fill:#edf1f6;stroke:#687b91;stroke-width:1}.node-system-bar{fill:#dbeeff}.node-data-cap{fill:#d9f0f4;stroke:#2b83a6;stroke-width:1}.node-control-mark{fill:none;stroke:#7456a6;stroke-width:1.4}
+      `;
+    }
+
+    function wrapText(text, maxChars, maxLines = 3) {
+      const raw = String(text || '').trim();
+      if (!raw) return [''];
+      const containsSpaces = /\s/.test(raw);
+      const tokens = containsSpaces ? raw.split(/\s+/) : Array.from(raw);
+      const lines = [];
+      let line = '';
+      for (const token of tokens) {
+        const glue = containsSpaces && line ? ' ' : '';
+        const candidate = line + glue + token;
+        if (candidate.length <= maxChars || !line) line = candidate;
+        else { lines.push(line); line = token; }
+        if (lines.length === maxLines) break;
+      }
+      if (lines.length < maxLines && line) lines.push(line);
+      const consumed = containsSpaces ? lines.join(' ').replace(/…$/, '') : lines.join('').replace(/…$/, '');
+      if (consumed.length < raw.length && lines.length) {
+        const last = lines.length - 1;
+        lines[last] = lines[last].slice(0, Math.max(1, maxChars - 1)) + '…';
+      }
+      return lines.slice(0, maxLines);
+    }
+
+    function edgeMarkerId(stateId, type) {
+      return `arrow-${stateId}-${type}`;
+    }
+
+    function markerColor(type) {
+      return ({
+        sequence:'#47617b', data:'#2b83a6', integration:'#16815a', exception:'#c13a30', control:'#7456a6', 'manual-handoff':'#6b7280'
+      })[type] || '#47617b';
+    }
+
+    function edgeRoute(edge, src, dst, layout, index) {
+      const marginOffset = (index % 6) * 7;
+      const route = edge.route || 'auto';
+      let sx, sy, ex, ey;
+      const forward = dst.x >= src.x + src.w * .45;
+      if (forward) {
+        sx = src.x + src.w; sy = src.cy;
+        ex = dst.x; ey = dst.cy;
+      } else if (dst.cy > src.cy) {
+        sx = src.cx; sy = src.y + src.h;
+        ex = dst.cx; ey = dst.y;
+      } else {
+        sx = src.cx; sy = src.y;
+        ex = dst.cx; ey = dst.y + dst.h;
+      }
+      if (route === 'bottom' || (!forward && Math.abs(dst.stageIndex - src.stageIndex) > 0)) {
+        const y = layout.height - 28 - marginOffset;
+        return { path: `M ${sx} ${sy} L ${sx} ${y} L ${ex} ${y} L ${ex} ${ey}`, lx: (sx+ex)/2, ly: y-7 };
+      }
+      if (route === 'top') {
+        const y = layout.C.headerH - 12 - marginOffset;
+        return { path: `M ${sx} ${sy} L ${sx} ${y} L ${ex} ${y} L ${ex} ${ey}`, lx: (sx+ex)/2, ly: y-7 };
+      }
+      if (forward) {
+        const midX = sx + Math.max(22, (ex - sx) / 2);
+        return { path: `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ey} L ${ex} ${ey}`, lx: midX + 3, ly: (sy+ey)/2 - 6 };
+      }
+      const midY = sy + (ey - sy) / 2;
+      return { path: `M ${sx} ${sy} L ${sx} ${midY} L ${ex} ${midY} L ${ex} ${ey}`, lx: (sx+ex)/2, ly: midY-6 };
+    }
+
+    function nodeShape(node, p) {
+      const x = p.x, y = p.y, w = p.w, h = p.h;
+      const statusClass = node.status === 'unconfirmed' || node.confidence === 'low' || node.confidence === 'unknown' ? ' node-unconfirmed' : '';
+      const cls = `node-main node-${esc(node.type || 'activity')}${statusClass}`;
+      if (node.type === 'decision') {
+        const points = `${x+w/2},${y} ${x+w},${y+h/2} ${x+w/2},${y+h} ${x},${y+h/2}`;
+        return `<polygon class="${cls}" points="${points}"></polygon>`;
+      }
+      if (node.type === 'control') {
+        const cut = 15;
+        const points = `${x+cut},${y} ${x+w-cut},${y} ${x+w},${y+h/2} ${x+w-cut},${y+h} ${x+cut},${y+h} ${x},${y+h/2}`;
+        return `<polygon class="${cls}" points="${points}"></polygon><path class="node-control-mark" d="M ${x+14} ${y+17} L ${x+19} ${y+22} L ${x+29} ${y+11}"></path>`;
+      }
+      const rx = (node.type === 'start' || node.type === 'end' || node.type === 'milestone') ? h/2 : 11;
+      let extra = '';
+      if (node.type === 'document') {
+        extra = `<path class="node-fold" d="M ${x+w-22} ${y} L ${x+w-22} ${y+18} L ${x+w} ${y+18} Z"></path>`;
+      } else if (node.type === 'system') {
+        extra = `<path class="node-system-bar" d="M ${x+1} ${y+1} H ${x+w-1} V ${y+18} H ${x+1} Z"></path>`;
+      } else if (node.type === 'data') {
+        extra = `<ellipse class="node-data-cap" cx="${x+w/2}" cy="${y+8}" rx="${w/2-2}" ry="7"></ellipse>`;
+      }
+      return `<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" ry="${rx}"></rect>${extra}`;
+    }
+
+    function typeLabel(type) {
+      return ({start:'START',end:'END',activity:'TASK',decision:'DECISION',system:'SYSTEM',data:'DATA',document:'DOC',control:'CONTROL',external:'EXTERNAL',milestone:'MILESTONE',note:'NOTE'})[type] || 'TASK';
+    }
+
+    function modeLabel(mode) {
+      return ({manual:'MANUAL',automated:'AUTO',hybrid:'HYBRID',unknown:'TBD'})[mode] || 'TBD';
+    }
+
+    function renderNode(node, p) {
+      const maxChars = Math.max(9, Math.floor((p.w - 26) / 12));
+      const maxLines = node.type === 'decision' ? 3 : 3;
+      const lines = wrapText(node.label, maxChars, maxLines);
+      const centerY = p.cy - ((lines.length - 1) * 8) + (node.type === 'system' ? 5 : 0);
+      const labelTspans = lines.map((line, i) => `<tspan x="${p.cx}" dy="${i === 0 ? 0 : 16}">${esc(line)}</tspan>`).join('');
+      const mode = node.mode || 'unknown';
+      const modeW = Math.max(34, modeLabel(mode).length * 6 + 10);
+      const badgePain = arr(node.painPointIds);
+      const badgeChange = arr(node.changeIds);
+      const badgeRisk = arr(node.riskIds);
+      const badges = [];
+      let bx = p.x + p.w - 6;
+      function addBadge(list, kind) {
+        if (!list.length) return;
+        const label = list.length === 1 ? list[0] : `${list[0]}+${list.length-1}`;
+        const bw = Math.max(27, label.length * 5.2 + 8);
+        bx -= bw;
+        badges.push(`<rect class="node-badge-${kind}" x="${bx}" y="${p.y-9}" width="${bw}" height="17" rx="8.5"></rect><text class="node-badge-text" x="${bx+bw/2}" y="${p.y+2.5}">${esc(label)}</text>`);
+        bx -= 4;
+      }
+      addBadge(badgeRisk, 'risk');
+      addBadge(badgeChange, 'change');
+      addBadge(badgePain, 'pain');
+      const tooltip = [node.id, node.label, node.detail, node.owner && `Owner: ${node.owner}`, node.system && `System: ${node.system}`].filter(Boolean).join('\n');
+      return `
+        <g class="node" data-state-id="${esc(node.__stateId || '')}" data-node-id="${esc(node.id)}" tabindex="0" role="button" aria-label="${esc(node.id + ' ' + node.label)}">
+          <title>${esc(tooltip)}</title>
+          ${nodeShape(node, p)}
+          <text class="node-type" x="${p.x+10}" y="${p.y+14}">${esc(typeLabel(node.type))}</text>
+          <text class="node-label" x="${p.cx}" y="${centerY}">${labelTspans}</text>
+          <rect class="node-mode-${esc(mode)}" x="${p.x+8}" y="${p.y+p.h-17}" width="${modeW}" height="12" rx="6"></rect>
+          <text class="node-mode-text" x="${p.x+8+modeW/2}" y="${p.y+p.h-8}" text-anchor="middle">${esc(modeLabel(mode))}</text>
+          <text class="node-id" x="${p.x+p.w-8}" y="${p.y+p.h-8}" text-anchor="end">${esc(node.id)}</text>
+          ${badges.join('')}
+        </g>
+      `;
+    }
+
+    function renderDiagram(state) {
+      const layout = computeLayout(state);
+      stateLayouts.set(state.id, layout);
+      const { C, lanes, stages, laneHeights, laneTops, positions, width, height } = layout;
+      arr(state.nodes).forEach(node => node.__stateId = state.id);
+      const themeClass = stateThemeClass(state);
+      let svg = `<svg id="svg-${esc(state.id)}" class="diagram-svg" data-state-id="${esc(state.id)}" data-intrinsic-width="${width}" data-intrinsic-height="${height}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="${NS}" role="img" aria-label="${esc(state.label)}業務フロー">`;
+      svg += `<defs><style>${svgStyleText()}</style><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#172033" flood-opacity=".12"/></filter>`;
+      ['sequence','data','integration','exception','control','manual-handoff'].forEach(type => {
+        svg += `<marker id="${edgeMarkerId(state.id,type)}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="${markerColor(type)}"></path></marker>`;
+      });
+      svg += `</defs>`;
+      svg += `<rect class="s-bg" x=".5" y=".5" width="${width-1}" height="${height-1}" rx="8"></rect>`;
+      svg += `<rect class="s-corner" x="0" y="0" width="${C.laneLabelW}" height="${C.headerH}"></rect><text class="s-stage-label" x="${C.laneLabelW/2}" y="${C.headerH/2+5}" text-anchor="middle">担当 / 工程</text>`;
+      stages.forEach((stage, si) => {
+        const x = C.laneLabelW + si*C.stageW;
+        svg += `<rect class="s-header" x="${x}" y="0" width="${C.stageW}" height="${C.headerH}"></rect>`;
+        const lines = wrapText(stage.label, 13, 2);
+        lines.forEach((line, li) => { svg += `<text class="s-stage-label" x="${x+C.stageW/2}" y="${C.headerH/2 - (lines.length-1)*7 + li*15 + 4}" text-anchor="middle">${esc(line)}</text>`; });
+      });
+      lanes.forEach((lane, li) => {
+        const y = laneTops[li], h = laneHeights[li];
+        svg += `<rect class="${li%2 ? 's-lane-bg-odd' : 's-lane-bg-even'}" x="${C.laneLabelW}" y="${y}" width="${stages.length*C.stageW}" height="${h}"></rect>`;
+        svg += `<rect class="s-lane-label-bg" x="0" y="${y}" width="${C.laneLabelW}" height="${h}"></rect>`;
+        const lines = wrapText(lane.label, 13, 2);
+        lines.forEach((line, idx) => { svg += `<text class="s-lane-label" x="${C.laneLabelW/2}" y="${y+h/2 - (lines.length-1)*8 + idx*17}" text-anchor="middle">${esc(line)}</text>`; });
+        if (lane.group) svg += `<text class="s-lane-group" x="${C.laneLabelW/2}" y="${y+h/2 + lines.length*9 + 11}" text-anchor="middle">${esc(lane.group)}</text>`;
+        svg += `<line class="s-grid" x1="0" y1="${y+h}" x2="${C.laneLabelW+stages.length*C.stageW}" y2="${y+h}"></line>`;
+      });
+      for (let si=0; si<=stages.length; si++) {
+        const x = C.laneLabelW + si*C.stageW;
+        svg += `<line class="s-grid" x1="${x}" y1="0" x2="${x}" y2="${C.headerH+laneHeights.reduce((a,b)=>a+b,0)}"></line>`;
+      }
+
+      arr(state.groups).forEach(group => {
+        const laneIdxs = arr(group.laneIds).map(id => layout.laneIndex.get(id)).filter(Number.isInteger);
+        const stageIdxs = arr(group.stageIds).map(id => layout.stageIndex.get(id)).filter(Number.isInteger);
+        if (!laneIdxs.length || !stageIdxs.length) return;
+        const minL = Math.min(...laneIdxs), maxL = Math.max(...laneIdxs), minS = Math.min(...stageIdxs), maxS = Math.max(...stageIdxs);
+        const x = C.laneLabelW + minS*C.stageW + 8;
+        const y = laneTops[minL] + 8;
+        const w = (maxS-minS+1)*C.stageW - 16;
+        const h = (laneTops[maxL] + laneHeights[maxL]) - y - 8;
+        const labelW = Math.min(w-16, Math.max(110, String(group.label || '').length*8 + 20));
+        svg += `<rect class="s-group ${themeClass === 'tobe' ? 's-group-tobe' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="11"></rect>`;
+        svg += `<rect class="s-group-label-bg" x="${x+10}" y="${y-8}" width="${labelW}" height="18" rx="9"></rect><text class="s-group-label" x="${x+10+labelW/2}" y="${y+4.5}" text-anchor="middle">${esc(group.label)}</text>`;
+      });
+
+      arr(state.edges).forEach((edge, index) => {
+        const src = positions.get(edge.from), dst = positions.get(edge.to);
+        if (!src || !dst) return;
+        const route = edgeRoute(edge, src, dst, layout, index);
+        const type = edge.type || 'sequence';
+        svg += `<path class="edge edge-${esc(type)}" d="${route.path}" marker-end="url(#${edgeMarkerId(state.id,type)})"><title>${esc([edge.id,edge.label,edge.condition].filter(Boolean).join(' · '))}</title></path>`;
+        const label = edge.label || edge.condition;
+        if (label) {
+          const lw = Math.min(180, Math.max(44, String(label).length*7 + 14));
+          svg += `<rect class="edge-label-bg" x="${route.lx-lw/2}" y="${route.ly-10}" width="${lw}" height="17" rx="8.5"></rect><text class="edge-label" x="${route.lx}" y="${route.ly+2}" text-anchor="middle">${esc(label)}</text>`;
+        }
+      });
+      arr(state.nodes).forEach(node => {
+        const p = positions.get(node.id);
+        if (p) svg += renderNode(node, p);
+      });
+      svg += `</svg>`;
+      return { svg, layout };
+    }
+
+    function renderStateCard(state) {
+      const { svg } = renderDiagram(state);
+      const theme = stateThemeClass(state);
+      return `
+        <section class="state-card" id="state-${esc(state.id)}">
+          <header class="state-head state-head--${theme}">
+            <div class="state-head__label">${esc(state.label)}</div>
+            <div class="state-head__summary">${esc(state.summary || '')}</div>
+            <div class="state-head__actions">
+              <button class="btn" data-action="export-svg" data-state-id="${esc(state.id)}">SVG</button>
+              <button class="btn" data-action="export-png" data-state-id="${esc(state.id)}">PNG</button>
+            </div>
+          </header>
+          <div class="diagram-scroll" data-state-id="${esc(state.id)}">
+            <div class="diagram-stage">${svg}</div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderChangeBand() {
+      const changes = arr(model.changes);
+      if (!model.view?.showDiff || !changes.length) return '';
+      const painMap = byId(model.painPoints);
+      const kpiMap = byId(model.kpis);
+      const cards = changes.map(change => {
+        const pains = arr(change.painPointIds).map(id => painMap.get(id)?.title || id);
+        const kpis = arr(change.kpiIds).map(id => kpiMap.get(id)?.name || id);
+        return `
+          <article class="change-card">
+            <div class="change-card__top"><span class="change-id">${esc(change.id)}</span><span class="change-type">${esc(change.type || 'change')}</span></div>
+            <h3>${esc(change.title)}</h3>
+            <p>${esc(change.rationale || '')}</p>
+            <div class="trace-row">
+              ${pains.slice(0,2).map(x => `<span class="trace-pill">課題: ${esc(x)}</span>`).join('')}
+              ${kpis.slice(0,1).map(x => `<span class="trace-pill">KPI: ${esc(x)}</span>`).join('')}
+            </div>
+          </article>
+        `;
+      }).join('');
+      return `
+        <section class="change-section">
+          <div class="change-section__head"><h2>改善の設計意図</h2><p>As-isの課題を、To-beの変更とKPIへ追跡</p></div>
+          <div class="change-grid">${cards}</div>
+        </section>
+      `;
+    }
+
+    function renderTable(headers, rows) {
+      if (!rows.length) return `<div class="empty">項目はありません。</div>`;
+      return `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    }
+
+    function renderChangesPanel() {
+      const painMap = byId(model.painPoints), kpiMap = byId(model.kpis);
+      const rows = arr(model.changes).map(c => `<tr>
+        <td class="cell-id">${esc(c.id)}</td>
+        <td class="cell-title">${esc(c.title)}</td>
+        <td>${esc(c.type || '')}</td>
+        <td>${esc(arr(c.painPointIds).map(id => painMap.get(id)?.title || id).join(' / ') || '—')}</td>
+        <td>${esc(arr(c.kpiIds).map(id => kpiMap.get(id)?.name || id).join(' / ') || '—')}</td>
+        <td>${esc(c.phase || '—')}</td>
+        <td>${esc(c.owner || '—')}</td>
+        <td><span class="status-dot status-dot--${esc(c.status || '')}"></span>${esc(c.status || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','変更','種別','解決する課題','KPI','フェーズ','責任者','状態'], rows);
+    }
+
+    function renderKpisPanel() {
+      const rows = arr(model.kpis).map(k => `<tr>
+        <td class="cell-id">${esc(k.id)}</td><td class="cell-title">${esc(k.name)}</td><td>${esc(k.category || '—')}</td>
+        <td>${esc(nonempty(k.baseline))}</td><td>${esc(nonempty(k.target))}</td><td>${esc(k.unit || '—')}</td>
+        <td>${esc(k.measurement || '—')}</td><td>${esc(k.owner || '—')}</td><td>${esc(k.cadence || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','KPI','分類','Baseline','Target','単位','測定方法','責任者','頻度'], rows);
+    }
+
+    function renderPainPanel() {
+      const rows = arr(model.painPoints).map(p => `<tr>
+        <td class="cell-id">${esc(p.id)}</td><td class="cell-title">${esc(p.title)}</td>
+        <td><span class="status-dot status-dot--${esc(p.severity || '')}"></span>${esc(p.severity || '—')}</td>
+        <td>${esc(p.rootCause || '—')}</td><td>${esc(p.evidence || '—')}</td><td>${esc(arr(p.nodeIds).concat(arr(p.edgeIds)).join(', ') || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','課題','重要度','根本原因','根拠','関連要素'], rows);
+    }
+
+    function renderQuestionsPanel() {
+      const assumptions = arr(model.meta?.assumptions).map(a => `<article class="info-card ${a.status === 'unverified' ? 'info-card--warning' : ''}">
+        <div class="info-card__top"><span class="cell-id">${esc(a.id)}</span><span class="chip ${a.status === 'unverified' ? 'chip--warning' : 'chip--success'}">${esc(a.status)}</span></div>
+        <h3>${esc(a.text)}</h3><p>Owner: ${esc(a.owner || '—')} · Sources: ${esc(arr(a.sourceIds).join(', ') || '—')}</p>
+      </article>`).join('');
+      const questions = arr(model.openQuestions).map(q => `<article class="info-card ${q.blocking && q.status === 'open' ? 'info-card--danger' : ''}">
+        <div class="info-card__top"><span class="cell-id">${esc(q.id)}</span>${q.blocking ? '<span class="chip chip--danger">BLOCKING</span>' : '<span class="chip">NON-BLOCKING</span>'}<span class="chip">${esc(q.status || 'open')}</span></div>
+        <h3>${esc(q.question)}</h3><p>${esc(q.why || '')}<br>Owner: ${esc(q.owner || '—')} · Related: ${esc(arr(q.relatedIds).join(', ') || '—')}</p>
+      </article>`).join('');
+      return `<h3 style="font-size:13px;margin:0 0 9px">仮定</h3><div class="cards-list">${assumptions || '<div class="empty">仮定はありません。</div>'}</div><h3 style="font-size:13px;margin:18px 0 9px">未解決事項</h3><div class="cards-list">${questions || '<div class="empty">未解決事項はありません。</div>'}</div>`;
+    }
+
+    function renderRisksPanel() {
+      const rows = arr(model.risks).map(r => `<tr>
+        <td class="cell-id">${esc(r.id)}</td><td class="cell-title">${esc(r.title)}</td>
+        <td><span class="status-dot status-dot--${esc(r.severity || '')}"></span>${esc(r.severity || '—')}</td>
+        <td>${esc(r.likelihood || '—')}</td><td>${esc(r.mitigation || '—')}</td><td>${esc(r.owner || '—')}</td><td>${esc(r.status || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','リスク','重要度','発生可能性','対策','責任者','状態'], rows);
+    }
+
+    function renderSourcesPanel() {
+      const rows = arr(model.meta?.sources).map(s => `<tr>
+        <td class="cell-id">${esc(s.id)}</td><td class="cell-title">${esc(s.label)}</td><td>${esc(s.kind || '—')}</td>
+        <td>${esc(s.date || '—')}</td><td>${esc(s.confidence || '—')}</td><td>${esc(s.reference || '—')}</td><td>${esc(s.note || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','情報源','種別','日付','確度','参照','注記'], rows);
+    }
+
+    function renderImplementationPanel() {
+      const rows = arr(model.implementation).map(p => `<tr>
+        <td class="cell-id">${esc(p.id)}</td><td class="cell-title">${esc(p.name)}</td><td>${esc(p.description || '—')}</td>
+        <td>${esc(arr(p.changeIds).join(', ') || '—')}</td><td>${esc(arr(p.dependencies).join(', ') || '—')}</td><td>${esc(arr(p.exitCriteria).join(' / ') || '—')}</td><td>${esc(p.owner || '—')}</td><td>${esc(p.status || '—')}</td>
+      </tr>`);
+      return renderTable(['ID','フェーズ','内容','変更ID','依存','完了条件','責任者','状態'], rows);
+    }
+
+    function renderLegend() {
+      if (model.view?.showLegend === false) return '';
+      return `<div class="legend">
+        <span class="legend__item"><span class="legend__shape"></span>処理</span>
+        <span class="legend__item"><span class="legend__shape legend__shape--decision"></span>判断</span>
+        <span class="legend__item"><span class="legend__shape legend__shape--system"></span>システム / データ</span>
+        <span class="legend__item"><span class="legend__shape legend__shape--unknown"></span>未確認</span>
+        <span class="legend__item"><span class="legend__line"></span>通常フロー</span>
+        <span class="legend__item"><span class="legend__line legend__line--data"></span>データ</span>
+        <span class="legend__item"><span class="legend__line legend__line--integration"></span>システム連携</span>
+        <span class="legend__item"><span class="legend__line legend__line--exception"></span>例外 / 差戻し</span>
+        <span class="legend__item"><span class="legend__line legend__line--control"></span>統制</span>
+        <span class="legend__item"><span class="chip chip--danger">P-xx</span>課題</span>
+        <span class="legend__item"><span class="chip chip--warning">C-xx</span>変更</span>
+      </div>`;
+    }
+
+    function renderDetailsSection() {
+      const panels = [
+        ['changes','変更台帳',renderChangesPanel()],
+        ['kpis','KPI',renderKpisPanel()],
+        ['pain','課題',renderPainPanel()],
+        ['questions','仮定・質問',renderQuestionsPanel()],
+        ['risks','リスク',renderRisksPanel()],
+        ['implementation','実装フェーズ',renderImplementationPanel()],
+        ['sources','根拠',renderSourcesPanel()]
+      ];
+      return `<section class="section-card">
+        <header class="section-card__head"><h2>詳細・トレーサビリティ</h2><p>図の要素を、課題・変更・KPI・根拠・実装へ接続</p></header>
+        <div class="tabs" role="tablist">${panels.map((p,i) => `<button class="tab ${i===0?'is-active':''}" role="tab" data-tab="${p[0]}">${esc(p[1])}</button>`).join('')}</div>
+        ${panels.map((p,i) => `<div class="tab-panel ${i===0?'is-active':''}" data-panel="${p[0]}">${p[2]}</div>`).join('')}
+        ${renderLegend()}
+      </section>`;
+    }
+
+    function renderFooter() {
+      const logo = model.view?.theme?.logoText || 'As-is / To-be Designer';
+      return `<footer class="footer"><span>${esc(logo)} · self-contained HTML · no external network dependency</span><span>${esc(model.meta?.confidentiality || 'internal').toUpperCase()} · v${esc(model.meta?.version || '0.0.0')} · ${esc(model.meta?.updatedAt || today())}</span></footer>`;
+    }
+
+    function renderAll() {
+      setTheme();
+      renderToolbar();
+      const validation = validateModel(model);
+      document.title = `${model.meta?.title || 'As-is / To-be'} v${model.meta?.version || ''}`;
+      const states = arr(model.states);
+      let body = renderHero();
+      states.forEach((state, index) => {
+        body += renderStateCard(state);
+        if (index === 0 && states.length > 1) body += renderChangeBand();
+      });
+      body += renderDetailsSection();
+      body += renderFooter();
+      $('#app').innerHTML = body;
+      bindDynamicEvents();
+      applyZoom();
+      if (validation.errors.length) console.error('Model validation errors', validation.errors);
+      if (validation.warnings.length) console.warn('Model validation warnings', validation.warnings);
+    }
+
+    function applyZoom() {
+      $$('.diagram-svg').forEach(svg => {
+        const w = Number(svg.dataset.intrinsicWidth || svg.viewBox.baseVal.width);
+        const h = Number(svg.dataset.intrinsicHeight || svg.viewBox.baseVal.height);
+        svg.style.width = `${w * zoom}px`;
+        svg.style.height = `${h * zoom}px`;
+      });
+      const label = $('#zoom-value');
+      if (label) label.textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    function fitWidth() {
+      const cards = $$('.diagram-scroll');
+      const ratios = cards.map(scroll => {
+        const svg = $('.diagram-svg', scroll);
+        if (!svg) return 1;
+        const intrinsic = Number(svg.dataset.intrinsicWidth || 1);
+        return Math.min(1.25, Math.max(.35, (scroll.clientWidth - 36) / intrinsic));
+      });
+      zoom = ratios.length ? Math.min(...ratios) : 1;
+      applyZoom();
+    }
+
+    function findNode(stateId, nodeId) {
+      const state = arr(model.states).find(s => s.id === stateId);
+      return { state, node: arr(state?.nodes).find(n => n.id === nodeId) };
+    }
+
+    function showNodeDetails(stateId, nodeId) {
+      const { state, node } = findNode(stateId, nodeId);
+      if (!node) return;
+      const painMap = byId(model.painPoints), changeMap = byId(model.changes), riskMap = byId(model.risks), sourceMap = byId(model.meta?.sources);
+      const tagList = (ids, map, cls='') => arr(ids).map(id => `<span class="chip ${cls}">${esc(id)} · ${esc(map.get(id)?.title || map.get(id)?.name || map.get(id)?.label || '')}</span>`).join('') || '<span class="cell-muted">—</span>';
+      $('#details-content').innerHTML = `
+        <header class="drawer__head">
+          <div class="drawer__head-main"><small>${esc(state?.label || stateId)} · ${esc(node.id)} · ${esc(typeLabel(node.type))}</small><h2>${esc(node.label)}</h2></div>
+          <button class="drawer__close" data-action="close-drawer" aria-label="閉じる">×</button>
+        </header>
+        <div class="drawer__body">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="detail-item__label">Owner</div><div class="detail-item__value">${esc(node.owner || '—')}</div></div>
+            <div class="detail-item"><div class="detail-item__label">Mode</div><div class="detail-item__value">${esc(modeLabel(node.mode))}</div></div>
+            <div class="detail-item"><div class="detail-item__label">Lane</div><div class="detail-item__value">${esc(state?.lanes?.find(l=>l.id===node.lane)?.label || node.lane)}</div></div>
+            <div class="detail-item"><div class="detail-item__label">Stage</div><div class="detail-item__value">${esc(state?.stages?.find(s=>s.id===node.stage)?.label || node.stage)}</div></div>
+            <div class="detail-item"><div class="detail-item__label">System</div><div class="detail-item__value">${esc(node.system || '—')}</div></div>
+            <div class="detail-item"><div class="detail-item__label">Status / confidence</div><div class="detail-item__value">${esc(node.status || '—')} / ${esc(node.confidence || '—')}</div></div>
+          </div>
+          <div class="detail-block"><h3>説明</h3><p>${esc(node.detail || '詳細説明はありません。')}</p></div>
+          <div class="detail-block"><h3>データ / 帳票</h3><div class="detail-tags">${arr(node.data).map(x=>`<span class="chip">${esc(x)}</span>`).join('') || '<span class="cell-muted">—</span>'}</div></div>
+          <div class="detail-block"><h3>課題</h3><div class="detail-tags">${tagList(node.painPointIds,painMap,'chip--danger')}</div></div>
+          <div class="detail-block"><h3>変更</h3><div class="detail-tags">${tagList(node.changeIds,changeMap,'chip--warning')}</div></div>
+          <div class="detail-block"><h3>リスク</h3><div class="detail-tags">${tagList(node.riskIds,riskMap,'')}</div></div>
+          <div class="detail-block"><h3>根拠</h3><div class="detail-tags">${tagList(node.sourceIds,sourceMap,'chip--info')}</div></div>
+        </div>`;
+      $('#details-drawer').classList.add('is-open');
+      $('#drawer-backdrop').classList.add('is-open');
+    }
+
+    function closeDrawer() {
+      $('#details-drawer').classList.remove('is-open');
+      $('#drawer-backdrop').classList.remove('is-open');
+    }
+
+    function openJsonModal() {
+      $('#json-editor').value = JSON.stringify(model, null, 2);
+      updateJsonValidation();
+      $('#json-modal').classList.add('is-open');
+      $('#modal-backdrop').classList.add('is-open');
+      setTimeout(() => $('#json-editor').focus(), 50);
+    }
+
+    function closeJsonModal() {
+      $('#json-modal').classList.remove('is-open');
+      $('#modal-backdrop').classList.remove('is-open');
+    }
+
+    function updateJsonValidation() {
+      const out = $('#json-validation');
+      try {
+        const candidate = JSON.parse($('#json-editor').value);
+        const result = validateModel(candidate);
+        out.innerHTML = `${result.errors.length ? `<h4 style="margin:8px 0 4px;color:var(--danger)">Errors (${result.errors.length})</h4><ul class="validation-list validation-list--error">${result.errors.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : '<div class="chip chip--success">構文・基本構造OK</div>'}${result.warnings.length ? `<h4 style="margin:12px 0 4px;color:#8a4b00">Warnings (${result.warnings.length})</h4><ul class="validation-list validation-list--warning">${result.warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''}`;
+        return { candidate, ...result };
+      } catch (error) {
+        out.innerHTML = `<h4 style="margin:8px 0 4px;color:var(--danger)">JSON parse error</h4><p style="font-size:11px;color:var(--danger)">${esc(error.message)}</p>`;
+        return { candidate: null, errors: [error.message], warnings: [] };
+      }
+    }
+
+    function downloadBlob(content, filename, type) {
+      const blob = content instanceof Blob ? content : new Blob([content], {type});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadJson(fromEditor = false) {
+      const raw = fromEditor ? $('#json-editor').value : JSON.stringify(model, null, 2);
+      downloadBlob(raw, `${safeFilename(model.meta?.title)}-model-v${safeFilename(model.meta?.version || '0.0.0')}.json`, 'application/json;charset=utf-8');
+    }
+
+    function serializeSvg(stateId) {
+      const svg = $(`#svg-${CSS.escape(stateId)}`);
+      if (!svg) throw new Error(`SVG not found: ${stateId}`);
+      const clone = svg.cloneNode(true);
+      clone.setAttribute('xmlns', NS);
+      clone.setAttribute('width', clone.dataset.intrinsicWidth || clone.viewBox.baseVal.width);
+      clone.setAttribute('height', clone.dataset.intrinsicHeight || clone.viewBox.baseVal.height);
+      clone.style.width = '';
+      clone.style.height = '';
+      const serializer = new XMLSerializer();
+      return `<?xml version="1.0" encoding="UTF-8"?>\n${serializer.serializeToString(clone)}`;
+    }
+
+    function exportSvg(stateId) {
+      const state = arr(model.states).find(s => s.id === stateId);
+      downloadBlob(serializeSvg(stateId), `${safeFilename(model.meta?.title)}-${safeFilename(state?.label || stateId)}.svg`, 'image/svg+xml;charset=utf-8');
+    }
+
+    function exportPng(stateId) {
+      const svgText = serializeSvg(stateId);
+      const svg = $(`#svg-${CSS.escape(stateId)}`);
+      const w = Number(svg.dataset.intrinsicWidth), h = Number(svg.dataset.intrinsicHeight);
+      const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = w * scale; canvas.height = h * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        canvas.toBlob(png => {
+          const state = arr(model.states).find(s => s.id === stateId);
+          downloadBlob(png, `${safeFilename(model.meta?.title)}-${safeFilename(state?.label || stateId)}.png`, 'image/png');
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); alert('PNG変換に失敗しました。SVG出力を利用してください。'); };
+      img.src = url;
+    }
+
+    function bindDynamicEvents() {
+      $$('.node').forEach(el => {
+        el.addEventListener('click', () => showNodeDetails(el.dataset.stateId, el.dataset.nodeId));
+        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showNodeDetails(el.dataset.stateId, el.dataset.nodeId); } });
+      });
+      $$('.tab').forEach(tab => tab.addEventListener('click', () => {
+        const root = tab.closest('.section-card');
+        $$('.tab', root).forEach(x => x.classList.toggle('is-active', x === tab));
+        $$('.tab-panel', root).forEach(panel => panel.classList.toggle('is-active', panel.dataset.panel === tab.dataset.tab));
+      }));
+      $$('[data-action="export-svg"]').forEach(btn => btn.addEventListener('click', () => exportSvg(btn.dataset.stateId)));
+      $$('[data-action="export-png"]').forEach(btn => btn.addEventListener('click', () => exportPng(btn.dataset.stateId)));
+    }
+
+    document.addEventListener('click', event => {
+      const action = event.target.closest('[data-action]')?.dataset.action;
+      if (!action) return;
+      if (action === 'zoom-out') { zoom = Math.max(.3, zoom - .1); applyZoom(); }
+      if (action === 'zoom-in') { zoom = Math.min(2, zoom + .1); applyZoom(); }
+      if (action === 'fit') fitWidth();
+      if (action === 'edit-json') openJsonModal();
+      if (action === 'download-json') downloadJson(false);
+      if (action === 'print') window.print();
+      if (action === 'close-drawer') closeDrawer();
+    });
+    $('#drawer-backdrop').addEventListener('click', closeDrawer);
+    $('#json-modal-close').addEventListener('click', closeJsonModal);
+    $('#json-cancel').addEventListener('click', closeJsonModal);
+    $('#modal-backdrop').addEventListener('click', closeJsonModal);
+    $('#json-editor').addEventListener('input', () => {
+      clearTimeout(window.__jsonValidateTimer);
+      window.__jsonValidateTimer = setTimeout(updateJsonValidation, 280);
+    });
+    $('#json-download').addEventListener('click', () => downloadJson(true));
+    $('#json-apply').addEventListener('click', () => {
+      const result = updateJsonValidation();
+      if (result.errors.length) return;
+      model = result.candidate;
+      closeJsonModal();
+      renderAll();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeDrawer(); closeJsonModal(); }
+    });
+    window.addEventListener('resize', () => {
+      clearTimeout(window.__fitTimer);
+      window.__fitTimer = setTimeout(() => { if (zoom < .99) fitWidth(); }, 200);
+    });
+
+    renderAll();
+    requestAnimationFrame(() => fitWidth());
+  })();
+  </script>
+</body>
+</html>

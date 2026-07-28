@@ -1,0 +1,14 @@
+{
+  "skill_name": "asis-tobe-diagram",
+  "queries": [
+    {"query": "現行業務と新システム導入後の業務をAs-is / To-beで一枚に整理して", "should_trigger": true},
+    {"query": "この業務フロー画像を読み解いて、更新可能なHTMLに再構築して", "should_trigger": true},
+    {"query": "BPRのヒアリングをして現状課題から将来業務とKPIまで図示して", "should_trigger": true},
+    {"query": "既存のAs-is To-beをレビューして、課題から変更とKPIのつながりを監査して", "should_trigger": true},
+    {"query": "この関数のシーケンス図をMermaidで書いて", "should_trigger": false},
+    {"query": "ECサイトの商品画像を生成して", "should_trigger": false},
+    {"query": "実行可能なBPMN 2.0 XMLをCamunda向けに作って", "should_trigger": false},
+    {"query": "会社のC4コンテナ図を作って", "should_trigger": false},
+    {"query": "会議メモを要約して", "should_trigger": false}
+  ]
+}

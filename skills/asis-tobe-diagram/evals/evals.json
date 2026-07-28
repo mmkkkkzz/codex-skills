@@ -1,0 +1,58 @@
+{
+  "skill_name": "asis-tobe-diagram",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "添付メモから業務改善のAs-is / To-beを作ってください。まず必要な確認があればまとめて質問し、回答がなくても初稿として進められるものは仮置きしてください。",
+      "expected_output": "A consolidated interview of at most eight high-value questions followed by a maintainable JSON model and self-contained HTML, with assumptions, confidentiality, risks, exception handling, KPI candidates, and traceability visible.",
+      "files": ["evals/files/messy-notes.txt"],
+      "expectations": [
+        "The response does not ask for information already present in the notes.",
+        "Any interview is consolidated into one batch of no more than eight questions and prioritizes approval rules and integration feasibility.",
+        "The generated model distinguishes facts, assumptions, and open questions and marks the artifact as draft.",
+        "As-is pain points are linked to concrete nodes or edges, and To-be changes are linked to pain points or objectives.",
+        "To-be includes an exception or fallback path rather than showing only happy-path automation.",
+        "The output includes process-model.json and a self-contained HTML generated from it, and the validator is run."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "この低解像度の業務改善図を、同じ見た目の画像ではなく更新可能なHTMLとして再構築してください。読めない箇所は勝手に補完しないでください。",
+      "expected_output": "A reconstruction workflow that extracts visible structure, identifies unreadable text, asks for the original at most once, and produces a clearly labeled redesign/provisional model rather than hallucinating an exact transcription.",
+      "files": ["evals/files/source-reference.png"],
+      "expectations": [
+        "The output explicitly distinguishes exact transcription from semantic redesign.",
+        "Unreadable labels are marked as unreadable, assumed, or open questions rather than asserted as facts.",
+        "The layout preserves comparable As-is and To-be lanes/stages where possible.",
+        "The artifact includes source provenance and a note about the image's confidence or limitations.",
+        "The HTML remains maintainable through embedded JSON rather than being a rasterized screenshot."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "既存のsample-model.jsonを更新してください。To-beの自動登録をPhase 3へ移し、API不可の場合のファイル連携案を追加してください。既存IDは意味が同じなら変えず、変更差分も出してください。",
+      "expected_output": "An update that backs up the previous model, preserves stable IDs, increments version and change log, validates, regenerates HTML, and emits an ID-based diff report.",
+      "files": ["assets/sample-model.json"],
+      "expectations": [
+        "Stable IDs are preserved unless an element's meaning changes.",
+        "meta.version, updatedAt, and changeLog are updated.",
+        "The previous model is retained as a backup or otherwise clearly recoverable.",
+        "The integration alternative is represented as an option or decision with risks, not silently treated as approved.",
+        "A diff_models.py report is generated and the updated model passes validation."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "このAs-is / To-be図をレビューだけしてください。描き直しは不要です。顧客合意に使えるか、重大度つきで指摘してください。",
+      "expected_output": "A review-only response ordered by Critical, High, Medium, and Low, with affected IDs, impact, and concrete remediation. It should assess scope, evidence, controls, exceptions, traceability, readability, and maintainability without redrawing unless requested.",
+      "files": ["assets/sample-model.json"],
+      "expectations": [
+        "The response does not redraw or overwrite the artifact.",
+        "Each finding includes severity, affected ID or section, impact, and a specific fix.",
+        "The review covers business semantics and evidence, not only visual formatting.",
+        "Open blocking questions prevent an approved recommendation.",
+        "The response identifies strengths separately from defects."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,805 @@
+{
+  "$schema": "./model.schema.json",
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "title": "受注・実績登録業務の As-is / To-be",
+    "subtitle": "構造化受付・例外処理化・基幹連携による業務改善（サンプル）",
+    "version": "0.1.0",
+    "status": "draft",
+    "language": "ja",
+    "purpose": "現行の手作業・差戻し・二重入力を可視化し、To-beの変更方針と追加確認事項を合意する",
+    "audience": ["業務責任者", "営業部門", "システム企画", "FDE / 開発チーム"],
+    "owner": "業務改革プロジェクト",
+    "approver": "未定",
+    "scope": {
+      "start": "顧客または営業担当から登録依頼を受け付ける",
+      "end": "基幹システムへの登録結果を確認し、依頼者へ完了通知する",
+      "inScope": ["依頼受付", "情報収集", "内容確認", "承認", "基幹登録", "完了確認"],
+      "outOfScope": ["契約交渉", "請求・入金", "基幹システム自体の刷新"]
+    },
+    "sources": [
+      {
+        "id": "S-01",
+        "label": "添付されたAs-is / To-be図イメージ",
+        "kind": "image",
+        "reference": "examples/source-reference.png",
+        "date": "2026-07-29",
+        "confidence": "medium",
+        "note": "構成・表現の参考。細部の正確な転記ではなく、再設計サンプルとして利用"
+      },
+      {
+        "id": "S-02",
+        "label": "デモ用の仮説ヒアリング結果",
+        "kind": "assumption",
+        "confidence": "low",
+        "note": "サンプルを成立させるための仮定。実案件では担当者確認が必要"
+      }
+    ],
+    "assumptions": [
+      {
+        "id": "AS-01",
+        "text": "受付情報はメール・添付ファイル・既存台帳に分散している",
+        "status": "unverified",
+        "sourceIds": ["S-01", "S-02"],
+        "owner": "業務責任者"
+      },
+      {
+        "id": "AS-02",
+        "text": "To-beでは通常案件を自動処理し、例外だけを人が確認する方針である",
+        "status": "unverified",
+        "sourceIds": ["S-02"],
+        "owner": "プロジェクト責任者"
+      }
+    ],
+    "conflicts": [],
+    "confidentiality": "internal",
+    "createdAt": "2026-07-29",
+    "updatedAt": "2026-07-29",
+    "generatedBy": "fde-asis-tobe skill sample",
+    "changeLog": [
+      {
+        "version": "0.1.0",
+        "date": "2026-07-29",
+        "summary": "添付イメージを参考に、再利用可能なサンプルモデルを新規作成",
+        "author": "AI-generated sample"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "id": "O-01",
+      "title": "受付情報を標準化する",
+      "description": "入力項目と必須条件を前工程で揃える",
+      "priority": "must",
+      "sourceIds": ["S-02"]
+    },
+    {
+      "id": "O-02",
+      "title": "人は例外判断に集中する",
+      "description": "定型照合・転記を自動化し、人による確認を例外に限定する",
+      "priority": "must",
+      "sourceIds": ["S-02"]
+    },
+    {
+      "id": "O-03",
+      "title": "登録結果を追跡可能にする",
+      "description": "受付から基幹登録・通知まで同一IDで監査可能にする",
+      "priority": "should",
+      "sourceIds": ["S-02"]
+    }
+  ],
+  "states": [
+    {
+      "id": "asis",
+      "label": "As-is",
+      "summary": "複数資料を人が収集・照合し、差戻し後に基幹システムへ再入力する",
+      "theme": "asis",
+      "lanes": [
+        { "id": "customer", "label": "依頼者 / 顧客", "group": "社外・依頼元", "kind": "external" },
+        { "id": "assistant", "label": "営業アシスタント", "group": "営業部門", "kind": "role" },
+        { "id": "sales", "label": "営業担当", "group": "営業部門", "kind": "role" },
+        { "id": "manager", "label": "管理者", "group": "管理・統制", "kind": "role" },
+        { "id": "automation", "label": "自動化 / 連携基盤", "group": "システム", "kind": "automation" },
+        { "id": "core", "label": "基幹システム", "group": "システム", "kind": "system" }
+      ],
+      "stages": [
+        { "id": "request", "label": "依頼" },
+        { "id": "collect", "label": "情報収集" },
+        { "id": "check", "label": "内容確認" },
+        { "id": "approve", "label": "承認" },
+        { "id": "register", "label": "登録" },
+        { "id": "complete", "label": "完了" }
+      ],
+      "groups": [
+        {
+          "id": "AG-01",
+          "label": "手作業による収集・照合・差戻し",
+          "laneIds": ["assistant", "sales"],
+          "stageIds": ["collect", "check"],
+          "kind": "subprocess",
+          "description": "メール、添付ファイル、台帳を横断して確認する",
+          "style": "dashed"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "A-START",
+          "label": "登録依頼が発生",
+          "type": "start",
+          "lane": "customer",
+          "stage": "request",
+          "order": 1,
+          "mode": "manual",
+          "status": "confirmed",
+          "sourceIds": ["S-01"]
+        },
+        {
+          "id": "A-01",
+          "label": "メールと添付資料を送付する",
+          "type": "document",
+          "lane": "customer",
+          "stage": "request",
+          "order": 2,
+          "detail": "自由記述メール、Excel、PDF等を想定",
+          "mode": "manual",
+          "data": ["依頼内容", "添付資料"],
+          "painPointIds": ["P-01"],
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-02",
+          "label": "複数資料から情報を集める",
+          "type": "activity",
+          "lane": "assistant",
+          "stage": "collect",
+          "order": 1,
+          "detail": "メール、添付ファイル、既存台帳から必要項目を抽出",
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "painPointIds": ["P-01", "P-04"],
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-03",
+          "label": "台帳へ転記し形式を整える",
+          "type": "document",
+          "lane": "assistant",
+          "stage": "collect",
+          "order": 2,
+          "detail": "後続確認のために項目名・形式を手作業で揃える",
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "painPointIds": ["P-02", "P-04"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "A-04",
+          "label": "必要項目は揃っているか",
+          "type": "decision",
+          "lane": "assistant",
+          "stage": "check",
+          "order": 1,
+          "detail": "必須項目・マスタ整合・重複を目視確認",
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "painPointIds": ["P-03", "P-04"],
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-05",
+          "label": "不足情報を確認する",
+          "type": "activity",
+          "lane": "sales",
+          "stage": "check",
+          "order": 1,
+          "detail": "依頼者へ再確認し、回答をアシスタントへ返す",
+          "owner": "営業担当",
+          "mode": "manual",
+          "painPointIds": ["P-03"],
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-06",
+          "label": "回答を反映し再確認する",
+          "type": "activity",
+          "lane": "assistant",
+          "stage": "check",
+          "order": 2,
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "painPointIds": ["P-03", "P-04"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "A-07",
+          "label": "登録内容を承認する",
+          "type": "control",
+          "lane": "manager",
+          "stage": "approve",
+          "order": 1,
+          "detail": "承認条件は未確認",
+          "owner": "管理者",
+          "mode": "manual",
+          "status": "unconfirmed",
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-08",
+          "label": "基幹システムへ手入力する",
+          "type": "activity",
+          "lane": "assistant",
+          "stage": "register",
+          "order": 1,
+          "detail": "台帳の内容を画面へ再入力する",
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "system": "基幹システム",
+          "painPointIds": ["P-02", "P-04"],
+          "sourceIds": ["S-01", "S-02"]
+        },
+        {
+          "id": "A-09",
+          "label": "登録データを保存する",
+          "type": "system",
+          "lane": "core",
+          "stage": "register",
+          "order": 1,
+          "mode": "automated",
+          "system": "基幹システム",
+          "sourceIds": ["S-01"]
+        },
+        {
+          "id": "A-10",
+          "label": "登録結果を目視で照合する",
+          "type": "activity",
+          "lane": "assistant",
+          "stage": "complete",
+          "order": 1,
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "painPointIds": ["P-02", "P-04"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "A-END",
+          "label": "完了を連絡する",
+          "type": "end",
+          "lane": "customer",
+          "stage": "complete",
+          "order": 1,
+          "mode": "manual",
+          "sourceIds": ["S-01"]
+        }
+      ],
+      "edges": [
+        { "id": "AE-01", "from": "A-START", "to": "A-01", "type": "sequence" },
+        { "id": "AE-02", "from": "A-01", "to": "A-02", "type": "manual-handoff", "label": "メール / 添付" },
+        { "id": "AE-03", "from": "A-02", "to": "A-03", "type": "sequence" },
+        { "id": "AE-04", "from": "A-03", "to": "A-04", "type": "sequence" },
+        { "id": "AE-05", "from": "A-04", "to": "A-05", "type": "exception", "label": "不備・不明あり", "painPointIds": ["P-03"] },
+        { "id": "AE-06", "from": "A-05", "to": "A-06", "type": "manual-handoff", "label": "回答" },
+        { "id": "AE-07", "from": "A-06", "to": "A-04", "type": "exception", "label": "再確認", "route": "bottom", "painPointIds": ["P-03"] },
+        { "id": "AE-08", "from": "A-04", "to": "A-07", "type": "control", "label": "確認済み" },
+        { "id": "AE-09", "from": "A-07", "to": "A-08", "type": "sequence", "label": "承認" },
+        { "id": "AE-10", "from": "A-08", "to": "A-09", "type": "manual-handoff", "label": "画面入力" },
+        { "id": "AE-11", "from": "A-09", "to": "A-10", "type": "data", "label": "登録結果" },
+        { "id": "AE-12", "from": "A-10", "to": "A-END", "type": "manual-handoff", "label": "完了連絡" }
+      ]
+    },
+    {
+      "id": "tobe",
+      "label": "To-be",
+      "summary": "入力を構造化し、マスタ照会・検証・登録・照合を自動化して例外だけを人が処理する",
+      "theme": "tobe",
+      "lanes": [
+        { "id": "customer", "label": "依頼者 / 顧客", "group": "社外・依頼元", "kind": "external" },
+        { "id": "assistant", "label": "営業アシスタント", "group": "営業部門", "kind": "role" },
+        { "id": "sales", "label": "営業担当", "group": "営業部門", "kind": "role" },
+        { "id": "manager", "label": "管理者", "group": "管理・統制", "kind": "role" },
+        { "id": "automation", "label": "自動化 / 連携基盤", "group": "システム", "kind": "automation" },
+        { "id": "core", "label": "基幹システム", "group": "システム", "kind": "system" }
+      ],
+      "stages": [
+        { "id": "request", "label": "依頼" },
+        { "id": "collect", "label": "情報収集" },
+        { "id": "check", "label": "内容確認" },
+        { "id": "approve", "label": "承認" },
+        { "id": "register", "label": "登録" },
+        { "id": "complete", "label": "完了" }
+      ],
+      "groups": [
+        {
+          "id": "TG-01",
+          "label": "自動処理パイプライン",
+          "laneIds": ["automation", "core"],
+          "stageIds": ["collect", "check", "approve", "register", "complete"],
+          "kind": "system-boundary",
+          "description": "受付IDを引き継ぎ、検証・登録・照合・通知を追跡する",
+          "style": "solid"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "T-START",
+          "label": "登録依頼が発生",
+          "type": "start",
+          "lane": "customer",
+          "stage": "request",
+          "order": 1,
+          "mode": "manual",
+          "status": "proposed",
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-01",
+          "label": "構造化フォームへ入力する",
+          "type": "document",
+          "lane": "customer",
+          "stage": "request",
+          "order": 2,
+          "detail": "必須項目、形式、添付条件を入力時に検証する",
+          "mode": "hybrid",
+          "changeIds": ["C-01"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-02",
+          "label": "マスタ情報を自動取得する",
+          "type": "data",
+          "lane": "automation",
+          "stage": "collect",
+          "order": 1,
+          "detail": "顧客・商品・組織等の正本を照会する",
+          "mode": "automated",
+          "changeIds": ["C-02"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-03",
+          "label": "必須項目・重複・整合性を検証する",
+          "type": "decision",
+          "lane": "automation",
+          "stage": "check",
+          "order": 1,
+          "detail": "ルールベースで正常・例外を判定する",
+          "mode": "automated",
+          "changeIds": ["C-02", "C-03"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-04",
+          "label": "例外内容を補正する",
+          "type": "activity",
+          "lane": "assistant",
+          "stage": "check",
+          "order": 1,
+          "detail": "例外キューに入った案件だけを確認する",
+          "owner": "営業アシスタント",
+          "mode": "manual",
+          "changeIds": ["C-03"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-05",
+          "label": "業務判断が必要な点を回答する",
+          "type": "activity",
+          "lane": "sales",
+          "stage": "check",
+          "order": 1,
+          "owner": "営業担当",
+          "mode": "manual",
+          "changeIds": ["C-03"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-06",
+          "label": "管理者承認が必要か",
+          "type": "decision",
+          "lane": "automation",
+          "stage": "approve",
+          "order": 1,
+          "detail": "金額・顧客区分・リスク条件で承認要否を判定",
+          "mode": "automated",
+          "status": "unconfirmed",
+          "changeIds": ["C-04"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-07",
+          "label": "例外案件を承認する",
+          "type": "control",
+          "lane": "manager",
+          "stage": "approve",
+          "order": 1,
+          "detail": "承認対象を限定し、理由と証跡を残す",
+          "owner": "管理者",
+          "mode": "manual",
+          "changeIds": ["C-04"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-08",
+          "label": "承認済みデータを連携する",
+          "type": "system",
+          "lane": "automation",
+          "stage": "register",
+          "order": 1,
+          "detail": "APIを第一候補とし、利用不可の場合はRPAを検討",
+          "mode": "automated",
+          "system": "連携基盤",
+          "status": "proposed",
+          "changeIds": ["C-05"],
+          "riskIds": ["R-01", "R-02"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-09",
+          "label": "登録データを保存する",
+          "type": "system",
+          "lane": "core",
+          "stage": "register",
+          "order": 1,
+          "mode": "automated",
+          "system": "基幹システム",
+          "changeIds": ["C-05"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-10",
+          "label": "登録結果を自動照合する",
+          "type": "data",
+          "lane": "automation",
+          "stage": "complete",
+          "order": 1,
+          "detail": "受付ID、件数、主要項目を突合し、不一致を例外キューへ送る",
+          "mode": "automated",
+          "changeIds": ["C-05"],
+          "riskIds": ["R-03"],
+          "sourceIds": ["S-02"]
+        },
+        {
+          "id": "T-END",
+          "label": "完了を自動通知する",
+          "type": "end",
+          "lane": "customer",
+          "stage": "complete",
+          "order": 1,
+          "mode": "automated",
+          "changeIds": ["C-05"],
+          "sourceIds": ["S-02"]
+        }
+      ],
+      "edges": [
+        { "id": "TE-01", "from": "T-START", "to": "T-01", "type": "sequence" },
+        { "id": "TE-02", "from": "T-01", "to": "T-02", "type": "integration", "label": "受付ID / 入力データ" },
+        { "id": "TE-03", "from": "T-02", "to": "T-03", "type": "data", "label": "マスタ補完済みデータ" },
+        { "id": "TE-04", "from": "T-03", "to": "T-04", "type": "exception", "label": "例外あり" },
+        { "id": "TE-05", "from": "T-04", "to": "T-05", "type": "manual-handoff", "label": "業務判断が必要" },
+        { "id": "TE-06", "from": "T-05", "to": "T-03", "type": "exception", "label": "補正後に再検証", "route": "bottom" },
+        { "id": "TE-07", "from": "T-03", "to": "T-06", "type": "sequence", "label": "正常" },
+        { "id": "TE-08", "from": "T-06", "to": "T-07", "type": "control", "label": "承認必要" },
+        { "id": "TE-09", "from": "T-07", "to": "T-08", "type": "sequence", "label": "承認済み" },
+        { "id": "TE-10", "from": "T-06", "to": "T-08", "type": "sequence", "label": "承認不要" },
+        { "id": "TE-11", "from": "T-08", "to": "T-09", "type": "integration", "label": "API / RPA" },
+        { "id": "TE-12", "from": "T-09", "to": "T-10", "type": "data", "label": "登録結果" },
+        { "id": "TE-13", "from": "T-10", "to": "T-END", "type": "integration", "label": "完了通知" }
+      ]
+    }
+  ],
+  "painPoints": [
+    {
+      "id": "P-01",
+      "title": "入力情報が分散している",
+      "description": "メール、添付ファイル、既存台帳から必要情報を探す必要がある",
+      "rootCause": "受付形式と必須項目が標準化されていない",
+      "severity": "high",
+      "nodeIds": ["A-01", "A-02"],
+      "evidence": "添付イメージとデモ仮説。実案件では観察・ヒアリングが必要",
+      "sourceIds": ["S-01", "S-02"],
+      "status": "hypothesis"
+    },
+    {
+      "id": "P-02",
+      "title": "転記と二重入力が発生する",
+      "description": "受付情報を台帳へ転記し、さらに基幹システムへ再入力している",
+      "rootCause": "受付データと基幹システム間に機械連携がない",
+      "severity": "critical",
+      "nodeIds": ["A-03", "A-08", "A-10"],
+      "evidence": "デモ仮説。工数・エラー率は未計測",
+      "sourceIds": ["S-02"],
+      "status": "hypothesis"
+    },
+    {
+      "id": "P-03",
+      "title": "不備時に差戻しループが発生する",
+      "description": "不足情報を営業担当経由で確認し、再度同じ確認を行う",
+      "rootCause": "入力時検証がなく、必須条件が後工程で初めて判明する",
+      "severity": "high",
+      "nodeIds": ["A-04", "A-05", "A-06"],
+      "edgeIds": ["AE-05", "AE-07"],
+      "evidence": "添付イメージとデモ仮説",
+      "sourceIds": ["S-01", "S-02"],
+      "status": "hypothesis"
+    },
+    {
+      "id": "P-04",
+      "title": "特定担当者がボトルネックになる",
+      "description": "収集・整形・確認・入力・照合が営業アシスタントへ集中する",
+      "rootCause": "定型処理と例外判断が分離されていない",
+      "severity": "high",
+      "nodeIds": ["A-02", "A-03", "A-04", "A-06", "A-08", "A-10"],
+      "evidence": "役割配置からの仮説。処理件数と負荷分布の確認が必要",
+      "sourceIds": ["S-02"],
+      "status": "hypothesis"
+    }
+  ],
+  "changes": [
+    {
+      "id": "C-01",
+      "title": "受付を構造化フォームへ標準化する",
+      "type": "standardize",
+      "fromNodeIds": ["A-01", "A-02", "A-03"],
+      "toNodeIds": ["T-01"],
+      "painPointIds": ["P-01", "P-03"],
+      "objectiveIds": ["O-01"],
+      "kpiIds": ["K-01", "K-03"],
+      "rationale": "入力時に必須条件を検証し、後工程の収集と差戻しを削減する",
+      "priority": "must",
+      "phase": "Phase 1",
+      "owner": "業務責任者",
+      "status": "proposed"
+    },
+    {
+      "id": "C-02",
+      "title": "マスタ取得と定型検証を自動化する",
+      "type": "automate",
+      "fromNodeIds": ["A-02", "A-04"],
+      "toNodeIds": ["T-02", "T-03"],
+      "painPointIds": ["P-01", "P-04"],
+      "objectiveIds": ["O-02"],
+      "kpiIds": ["K-01", "K-02", "K-04"],
+      "rationale": "ルール化できる照合を自動処理し、人の確認負荷を減らす",
+      "priority": "must",
+      "phase": "Phase 1",
+      "owner": "システム企画",
+      "status": "proposed"
+    },
+    {
+      "id": "C-03",
+      "title": "人の確認を例外案件に限定する",
+      "type": "exceptionize",
+      "fromNodeIds": ["A-04", "A-05", "A-06"],
+      "toNodeIds": ["T-03", "T-04", "T-05"],
+      "painPointIds": ["P-03", "P-04"],
+      "objectiveIds": ["O-02"],
+      "kpiIds": ["K-01", "K-02", "K-03"],
+      "rationale": "正常案件を止めず、判断が必要な案件だけを担当者へ送る",
+      "priority": "must",
+      "phase": "Phase 1",
+      "owner": "営業部門",
+      "status": "proposed"
+    },
+    {
+      "id": "C-04",
+      "title": "承認対象をリスク条件で限定する",
+      "type": "control",
+      "fromNodeIds": ["A-07"],
+      "toNodeIds": ["T-06", "T-07"],
+      "painPointIds": ["P-04"],
+      "objectiveIds": ["O-02"],
+      "kpiIds": ["K-01", "K-05"],
+      "rationale": "統制を維持しながら、通常案件の承認待ちを削減する",
+      "priority": "should",
+      "phase": "Phase 2",
+      "owner": "管理者",
+      "status": "proposed"
+    },
+    {
+      "id": "C-05",
+      "title": "基幹登録・照合・通知を一気通貫で連携する",
+      "type": "integrate",
+      "fromNodeIds": ["A-08", "A-09", "A-10", "A-END"],
+      "toNodeIds": ["T-08", "T-09", "T-10", "T-END"],
+      "painPointIds": ["P-02", "P-04"],
+      "objectiveIds": ["O-02", "O-03"],
+      "kpiIds": ["K-01", "K-02", "K-04"],
+      "riskIds": ["R-01", "R-02", "R-03"],
+      "rationale": "再入力をなくし、受付IDで処理結果と失敗を追跡できるようにする",
+      "priority": "must",
+      "phase": "Phase 2",
+      "owner": "システム企画",
+      "status": "proposed"
+    }
+  ],
+  "kpis": [
+    {
+      "id": "K-01",
+      "name": "受付から完了までのリードタイム",
+      "category": "outcome",
+      "baseline": "要計測",
+      "target": "50%短縮（仮目標）",
+      "unit": "時間 / 件",
+      "measurement": "受付IDの作成時刻と完了通知時刻の差",
+      "owner": "業務責任者",
+      "cadence": "月次",
+      "linkedChangeIds": ["C-01", "C-02", "C-03", "C-04", "C-05"],
+      "status": "proposed"
+    },
+    {
+      "id": "K-02",
+      "name": "1件当たりの人手工数",
+      "category": "efficiency",
+      "baseline": "要計測",
+      "target": "60%削減（仮目標）",
+      "unit": "分 / 件",
+      "measurement": "作業ログまたはサンプリング計測",
+      "owner": "営業アシスタント責任者",
+      "cadence": "月次",
+      "linkedChangeIds": ["C-02", "C-03", "C-05"],
+      "status": "proposed"
+    },
+    {
+      "id": "K-03",
+      "name": "不備差戻し率",
+      "category": "quality",
+      "baseline": "要計測",
+      "target": "30%以下（仮目標）",
+      "unit": "%",
+      "measurement": "受付件数に対する例外キュー投入件数",
+      "owner": "営業部門",
+      "cadence": "週次",
+      "linkedChangeIds": ["C-01", "C-03"],
+      "status": "proposed"
+    },
+    {
+      "id": "K-04",
+      "name": "自動処理成功率",
+      "category": "reliability",
+      "baseline": "0%（未導入）",
+      "target": "95%以上（仮目標）",
+      "unit": "%",
+      "measurement": "自動処理開始件数に対する無人完了件数",
+      "owner": "システム運用",
+      "cadence": "日次",
+      "linkedChangeIds": ["C-02", "C-05"],
+      "status": "proposed"
+    },
+    {
+      "id": "K-05",
+      "name": "承認逸脱件数",
+      "category": "control",
+      "baseline": "要計測",
+      "target": "0件",
+      "unit": "件",
+      "measurement": "承認ルールと監査ログの突合",
+      "owner": "管理者",
+      "cadence": "月次",
+      "linkedChangeIds": ["C-04"],
+      "status": "proposed"
+    }
+  ],
+  "risks": [
+    {
+      "id": "R-01",
+      "title": "基幹システムのAPI利用可否が未確認",
+      "description": "APIが利用できない場合はRPAとなり、保守性と障害対応が変わる",
+      "severity": "high",
+      "likelihood": "unknown",
+      "mitigation": "Phase 0でAPI・ファイル連携・RPAの順に実現性を評価する",
+      "owner": "システム企画",
+      "relatedIds": ["T-08", "C-05"],
+      "status": "open"
+    },
+    {
+      "id": "R-02",
+      "title": "自動処理用アカウントの権限が過大になる",
+      "description": "登録権限と承認権限が同一アカウントへ集約される恐れがある",
+      "severity": "high",
+      "likelihood": "medium",
+      "mitigation": "最小権限、職務分離、監査ログ、秘密情報管理を設計する",
+      "owner": "情報セキュリティ",
+      "relatedIds": ["T-08", "C-05"],
+      "status": "open"
+    },
+    {
+      "id": "R-03",
+      "title": "登録成功と業務上の完了が一致しない",
+      "description": "API成功のみで完了扱いにすると、項目欠落や重複を見逃す可能性がある",
+      "severity": "medium",
+      "likelihood": "medium",
+      "mitigation": "業務キーと主要項目の照合、例外キュー、再実行手順を実装する",
+      "owner": "システム運用",
+      "relatedIds": ["T-10", "C-05"],
+      "status": "open"
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "Q-01",
+      "question": "月間件数、平均処理時間、差戻し率はどの程度か",
+      "why": "優先順位、効果試算、非機能要件を決めるため",
+      "blocking": false,
+      "owner": "業務責任者",
+      "relatedIds": ["K-01", "K-02", "K-03"],
+      "status": "open"
+    },
+    {
+      "id": "Q-02",
+      "question": "管理者承認が必要となる条件は何か",
+      "why": "To-beの統制と自動通過条件を確定するため",
+      "blocking": true,
+      "owner": "管理者",
+      "relatedIds": ["A-07", "T-06", "T-07", "C-04"],
+      "status": "open"
+    },
+    {
+      "id": "Q-03",
+      "question": "基幹システムはAPI、ファイル連携、RPAのどれを利用できるか",
+      "why": "連携方式と運用リスクを確定するため",
+      "blocking": true,
+      "owner": "システム管理者",
+      "relatedIds": ["T-08", "C-05", "R-01"],
+      "status": "open"
+    },
+    {
+      "id": "Q-04",
+      "question": "例外キューの一次対応者、対応期限、エスカレーション先は誰か",
+      "why": "自動化失敗時に業務を止めない運用を設計するため",
+      "blocking": false,
+      "owner": "営業部門 / システム運用",
+      "relatedIds": ["T-03", "T-04", "T-10", "R-03"],
+      "status": "open"
+    }
+  ],
+  "implementation": [
+    {
+      "id": "PH-0",
+      "name": "Phase 0: 事実確認・ベースライン測定",
+      "description": "現行観察、件数・工数計測、承認条件、連携方式を確定する",
+      "changeIds": [],
+      "dependencies": [],
+      "exitCriteria": ["主要仮定を確認済みにする", "KPIベースラインを取得する", "API / RPA実現性を評価する"],
+      "owner": "プロジェクト責任者",
+      "status": "proposed"
+    },
+    {
+      "id": "PH-1",
+      "name": "Phase 1: 受付標準化・例外処理化",
+      "description": "構造化フォーム、マスタ照会、検証、例外キューを導入する",
+      "changeIds": ["C-01", "C-02", "C-03"],
+      "dependencies": ["PH-0"],
+      "exitCriteria": ["通常案件の入力不備を前工程で検知できる", "例外キューと担当ルールが稼働する"],
+      "owner": "業務責任者 / システム企画",
+      "status": "proposed"
+    },
+    {
+      "id": "PH-2",
+      "name": "Phase 2: 承認最適化・基幹連携",
+      "description": "リスクベース承認と自動登録・照合・通知を導入する",
+      "changeIds": ["C-04", "C-05"],
+      "dependencies": ["PH-1"],
+      "exitCriteria": ["承認逸脱0件", "自動処理成功率の目標到達", "手動フォールバックを演習済み"],
+      "owner": "管理者 / システム企画",
+      "status": "proposed"
+    }
+  ],
+  "view": {
+    "layout": "stacked",
+    "orientation": "left-to-right",
+    "showLegend": true,
+    "showDiff": true,
+    "showEvidence": true,
+    "page": {
+      "size": "A3",
+      "orientation": "landscape"
+    },
+    "theme": {
+      "brandColor": "#315f86",
+      "accentColor": "#d97706",
+      "asisColor": "#315f86",
+      "tobeColor": "#a16207",
+      "fontFamily": "Inter, Noto Sans JP, Yu Gothic UI, Hiragino Sans, Meiryo, system-ui, sans-serif",
+      "logoText": "FDE Enablement"
+    }
+  }
+}

@@ -1,0 +1,446 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.internal/schemas/asis-tobe-process-model-1.0.0.json",
+  "title": "As-is / To-be Process Model",
+  "type": "object",
+  "required": ["schemaVersion", "meta", "states", "view"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "states": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/state" }
+    },
+    "objectives": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/objective" },
+      "default": []
+    },
+    "painPoints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/painPoint" },
+      "default": []
+    },
+    "changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/change" },
+      "default": []
+    },
+    "kpis": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/kpi" },
+      "default": []
+    },
+    "risks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/risk" },
+      "default": []
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/openQuestion" },
+      "default": []
+    },
+    "implementation": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/implementationPhase" },
+      "default": []
+    },
+    "view": { "$ref": "#/$defs/view" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "meta": {
+      "type": "object",
+      "required": ["title", "version", "status", "purpose", "scope", "confidentiality"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "subtitle": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "approved", "archived"] },
+        "language": { "type": "string", "default": "ja" },
+        "purpose": { "type": "string", "minLength": 1 },
+        "audience": { "$ref": "#/$defs/stringArray" },
+        "owner": { "type": "string" },
+        "approver": { "type": "string" },
+        "scope": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string" },
+            "end": { "type": "string" },
+            "inScope": { "$ref": "#/$defs/stringArray" },
+            "outOfScope": { "$ref": "#/$defs/stringArray" }
+          },
+          "additionalProperties": true
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source" },
+          "default": []
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assumption" },
+          "default": []
+        },
+        "conflicts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/conflict" },
+          "default": []
+        },
+        "confidentiality": {
+          "enum": ["public", "internal", "confidential", "restricted"]
+        },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "generatedBy": { "type": "string" },
+        "changeLog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version", "date", "summary"],
+            "properties": {
+              "version": { "type": "string" },
+              "date": { "type": "string" },
+              "summary": { "type": "string" },
+              "author": { "type": "string" }
+            },
+            "additionalProperties": true
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "required": ["id", "label", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": ["interview", "document", "image", "system", "observation", "assumption", "other"]
+        },
+        "reference": { "type": "string" },
+        "date": { "type": "string" },
+        "owner": { "type": "string" },
+        "confidence": { "enum": ["high", "medium", "low", "unknown"] },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "assumption": {
+      "type": "object",
+      "required": ["id", "text", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "status": { "enum": ["unverified", "confirmed", "rejected"] },
+        "sourceIds": { "$ref": "#/$defs/stringArray" },
+        "owner": { "type": "string" },
+        "due": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["id", "description"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "sourceIds": { "$ref": "#/$defs/stringArray" },
+        "resolution": { "type": "string" },
+        "status": { "enum": ["open", "resolved"] }
+      },
+      "additionalProperties": true
+    },
+    "state": {
+      "type": "object",
+      "required": ["id", "label", "lanes", "stages", "nodes", "edges"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string" },
+        "theme": { "enum": ["asis", "tobe", "interim", "neutral"] },
+        "lanes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/lane" }
+        },
+        "stages": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/stage" }
+        },
+        "groups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/group" },
+          "default": []
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/edge" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "lane": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "group": { "type": "string" },
+        "description": { "type": "string" },
+        "owner": { "type": "string" },
+        "kind": { "enum": ["person", "role", "organization", "external", "system", "automation", "other"] }
+      },
+      "additionalProperties": true
+    },
+    "stage": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "group": {
+      "type": "object",
+      "required": ["id", "label", "laneIds", "stageIds"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "laneIds": { "$ref": "#/$defs/stringArray" },
+        "stageIds": { "$ref": "#/$defs/stringArray" },
+        "kind": { "enum": ["subprocess", "system-boundary", "control-boundary", "scope", "other"] },
+        "description": { "type": "string" },
+        "style": { "enum": ["solid", "dashed", "dotted"] }
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "label", "type", "lane", "stage"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": ["start", "end", "activity", "decision", "system", "data", "document", "control", "external", "milestone", "note"]
+        },
+        "lane": { "type": "string" },
+        "stage": { "type": "string" },
+        "order": { "type": "number", "default": 1 },
+        "detail": { "type": "string" },
+        "owner": { "type": "string" },
+        "mode": { "enum": ["manual", "automated", "hybrid", "unknown"] },
+        "system": { "type": "string" },
+        "data": { "$ref": "#/$defs/stringArray" },
+        "badges": { "$ref": "#/$defs/stringArray" },
+        "sourceIds": { "$ref": "#/$defs/stringArray" },
+        "painPointIds": { "$ref": "#/$defs/stringArray" },
+        "changeIds": { "$ref": "#/$defs/stringArray" },
+        "riskIds": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["confirmed", "proposed", "unconfirmed", "deprecated"] },
+        "confidence": { "enum": ["high", "medium", "low", "unknown"] },
+        "metrics": { "type": "object", "additionalProperties": true },
+        "layout": {
+          "type": "object",
+          "properties": {
+            "stageSpan": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "laneSpan": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "dx": { "type": "number" },
+            "dy": { "type": "number" },
+            "height": { "type": "number", "minimum": 40, "maximum": 240 }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "type": {
+          "enum": ["sequence", "data", "integration", "exception", "control", "manual-handoff"]
+        },
+        "label": { "type": "string" },
+        "condition": { "type": "string" },
+        "sourceIds": { "$ref": "#/$defs/stringArray" },
+        "painPointIds": { "$ref": "#/$defs/stringArray" },
+        "route": { "enum": ["auto", "top", "bottom"] }
+      },
+      "additionalProperties": true
+    },
+    "objective": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "enum": ["must", "should", "could"] },
+        "sourceIds": { "$ref": "#/$defs/stringArray" }
+      },
+      "additionalProperties": true
+    },
+    "painPoint": {
+      "type": "object",
+      "required": ["id", "title", "severity"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "rootCause": { "type": "string" },
+        "severity": { "enum": ["critical", "high", "medium", "low"] },
+        "nodeIds": { "$ref": "#/$defs/stringArray" },
+        "edgeIds": { "$ref": "#/$defs/stringArray" },
+        "evidence": { "type": "string" },
+        "impact": { "type": "object", "additionalProperties": true },
+        "sourceIds": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["observed", "hypothesis", "confirmed", "resolved"] }
+      },
+      "additionalProperties": true
+    },
+    "change": {
+      "type": "object",
+      "required": ["id", "title", "type", "rationale"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": {
+          "enum": ["remove", "add", "automate", "standardize", "integrate", "merge", "split", "shift-left", "exceptionize", "control", "ownership", "measure", "other"]
+        },
+        "fromNodeIds": { "$ref": "#/$defs/stringArray" },
+        "toNodeIds": { "$ref": "#/$defs/stringArray" },
+        "painPointIds": { "$ref": "#/$defs/stringArray" },
+        "objectiveIds": { "$ref": "#/$defs/stringArray" },
+        "kpiIds": { "$ref": "#/$defs/stringArray" },
+        "riskIds": { "$ref": "#/$defs/stringArray" },
+        "rationale": { "type": "string" },
+        "priority": { "enum": ["must", "should", "could"] },
+        "phase": { "type": "string" },
+        "owner": { "type": "string" },
+        "status": { "enum": ["proposed", "agreed", "in-progress", "delivered", "rejected"] }
+      },
+      "additionalProperties": true
+    },
+    "kpi": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "enum": ["outcome", "efficiency", "quality", "control", "reliability", "adoption", "other"] },
+        "baseline": { "type": ["string", "number"] },
+        "target": { "type": ["string", "number"] },
+        "unit": { "type": "string" },
+        "measurement": { "type": "string" },
+        "owner": { "type": "string" },
+        "cadence": { "type": "string" },
+        "linkedChangeIds": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["proposed", "defined", "measured", "retired"] }
+      },
+      "additionalProperties": true
+    },
+    "risk": {
+      "type": "object",
+      "required": ["id", "title", "severity"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "severity": { "enum": ["critical", "high", "medium", "low"] },
+        "likelihood": { "enum": ["high", "medium", "low", "unknown"] },
+        "mitigation": { "type": "string" },
+        "owner": { "type": "string" },
+        "relatedIds": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["open", "mitigated", "accepted", "closed"] }
+      },
+      "additionalProperties": true
+    },
+    "openQuestion": {
+      "type": "object",
+      "required": ["id", "question", "blocking", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "why": { "type": "string" },
+        "blocking": { "type": "boolean" },
+        "owner": { "type": "string" },
+        "due": { "type": "string" },
+        "relatedIds": { "$ref": "#/$defs/stringArray" },
+        "status": { "enum": ["open", "answered", "deferred", "closed"] },
+        "answer": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "implementationPhase": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "changeIds": { "$ref": "#/$defs/stringArray" },
+        "dependencies": { "$ref": "#/$defs/stringArray" },
+        "exitCriteria": { "$ref": "#/$defs/stringArray" },
+        "owner": { "type": "string" },
+        "status": { "enum": ["proposed", "planned", "in-progress", "complete", "cancelled"] }
+      },
+      "additionalProperties": true
+    },
+    "view": {
+      "type": "object",
+      "properties": {
+        "layout": { "enum": ["stacked", "side-by-side"] },
+        "orientation": { "enum": ["left-to-right", "top-to-bottom"] },
+        "showLegend": { "type": "boolean" },
+        "showDiff": { "type": "boolean" },
+        "showEvidence": { "type": "boolean" },
+        "page": {
+          "type": "object",
+          "properties": {
+            "size": { "enum": ["A4", "A3", "A2", "auto"] },
+            "orientation": { "enum": ["landscape", "portrait"] }
+          },
+          "additionalProperties": true
+        },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "brandColor": { "type": "string" },
+            "accentColor": { "type": "string" },
+            "asisColor": { "type": "string" },
+            "tobeColor": { "type": "string" },
+            "fontFamily": { "type": "string" },
+            "logoText": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
