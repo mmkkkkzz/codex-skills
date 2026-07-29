@@ -1,13 +1,32 @@
 ---
 name: gh-pr-review
-description: Review the diff of the current open GitHub pull request or a specified PR and return code review findings, not a summary. Use when Codex needs to review a GitHub PR with `gh`, especially when the work should combine Claude Code's /pr-review-toolkit:review-pr output with specialized Codex sub-agents for lenses such as access control, security, data integrity, correctness, failure modes, API contracts, performance, observability and operations, frontend UX, tests, and maintainability.
+description: "Run an exhaustive, findings-first review of a materially large or high-risk GitHub pull request by combining Claude Code's /pr-review-toolkit:review-pr output with specialized Codex review lenses. Use only when the user explicitly requests `$gh-pr-review` or an exhaustive multi-lens review, or when the PR is materially large or high-risk: roughly more than 20 changed files or 1,000 changed lines, a cross-cutting architecture change, an authorization or tenant-boundary redesign, destructive database migration or data movement, or release/deployment control changes. Do not use for routine PR review, focused bug fixes, review-comment resolution, CI fixes, test-only follow-ups, or merge/closeout; use direct review and targeted validation instead."
 ---
 
 # Gh Pr Review
 
 ## Overview
 
-Review GitHub pull requests as a findings-first code review. Resolve the active PR with `gh`, build a local review bundle, run Claude Code's `/pr-review-toolkit:review-pr`, run lens-specific Codex sub-agents in parallel on `gpt-5.4-mini` with `xhigh` reasoning, then merge every concrete high, medium, and low severity finding into a severity-ordered report.
+Review eligible large or high-risk GitHub pull requests as a findings-first code review. Resolve the active PR with `gh`, build a local review bundle, run Claude Code's `/pr-review-toolkit:review-pr`, run lens-specific Codex sub-agents in parallel, then merge every concrete high, medium, and low severity finding into a severity-ordered report.
+
+## Eligibility Gate
+
+Apply this gate before building a bundle, starting Claude, or delegating review work. Continue with this skill only when at least one condition is true:
+
+- The user explicitly names `$gh-pr-review` or asks for an exhaustive, multi-agent, or multi-lens review.
+- The PR is materially large: roughly more than 20 changed files or 1,000 changed lines.
+- The PR materially changes a high-risk boundary: cross-cutting architecture, authorization or tenant isolation, destructive migration or data movement, or release/deployment controls.
+
+A file merely belonging to a sensitive area does not satisfy the gate; the diff must materially change that boundary.
+
+When the gate is not satisfied, stop this skill and use a lightweight review:
+
+- Read the changed diff directly.
+- Use at most one targeted reviewer when delegation is explicitly authorized and materially useful.
+- Run focused validation and the repository's normal exact-head CI gate.
+- Do not build the review bundle, start Claude PR Review Toolkit, or wait under this skill's long-running policy.
+
+Do not rerun the full skill after review fixes unless runtime behavior or the high-risk surface materially changes. Test-only, documentation-only, formatting, and review-comment follow-ups require targeted review or validation plus exact-head CI, not another exhaustive pass.
 
 ## Inputs
 
@@ -24,29 +43,30 @@ Both modes must produce the same final output contract and exact changed-file co
 
 ## Long-Running Wait Policy
 
-Claude PR Review Toolkit and lens sub-agents can legitimately take longer than 10 minutes on large or high-risk PRs. Do not treat 10 minutes, a single empty `wait_agent` timeout, or a quiet Claude process as failure.
+This policy applies only after the Eligibility Gate passes. Claude PR Review Toolkit and lens sub-agents can legitimately take longer than 10 minutes on eligible large or high-risk PRs. Do not treat 10 minutes, a single empty `wait_agent` timeout, or a quiet Claude process as failure.
 
 - For Claude, start the helper as a long-running command and keep polling the same session until it exits, errors, or the user asks to stop. Do not mark Claude unavailable solely because it has run for more than 10 minutes.
 - For sub-agents, use long `wait_agent` timeouts when supported. If a wait returns an empty timeout while the agent is still running, wait again instead of closing the agent.
 - Keep doing coordinator direct reads while slow Claude or sub-agent work runs, but do not finalize until the required Claude/sub-agent outputs return or a real terminal failure occurs.
-- Default patience budget: wait at least 20 minutes for normal PRs and at least 45 minutes for large, cross-cutting, migration-heavy, security-sensitive, or all-lens reviews. Waiting longer is appropriate when output is still progressing.
+- Default patience budget: wait at least 45 minutes for eligible large, cross-cutting, migration-heavy, security-sensitive, or all-lens reviews. Waiting longer is appropriate when output is still progressing.
 - Close or fallback only when the tool reports a final failure, the user asks to stop, or the process/agent is clearly non-responsive beyond the patience budget and direct coverage can replace it. In that case, report the exact wait time and fallback reason under `Residual risk`.
 - Send short progress updates during long waits so the user knows the review is still running.
 
 ## Quick Start
 
-1. Verify GitHub CLI access.
+1. Apply the Eligibility Gate. Use the lightweight review path and stop this skill when the PR is not eligible.
+2. Verify GitHub CLI access.
    - `gh auth status`
-2. Read repository instruction files before reviewing.
+3. Read repository instruction files before reviewing.
    - Start with repo-root or nearest `AGENTS.md`, `CLAUDE.md`, and contribution docs.
    - Treat repo-specific review requirements as hard constraints, not optional context.
-3. Build the review bundle.
+4. Build the review bundle.
    - `python3 "<skill-path>/scripts/prepare_pr_review.py" --repo "."`
    - Add `--pr "<number-or-url>"` when the review target is not the current branch PR.
-4. Read `<bundle-dir>/summary.md`.
-5. Read [`references/review-lenses.md`](references/review-lenses.md).
-6. Run Claude Code's PR Review Toolkit pass and save the raw output in the bundle.
-7. Launch only the recommended Codex lenses from `lens-hints.json`, then merge all concrete findings from Claude and every lens.
+5. Read `<bundle-dir>/summary.md`.
+6. Read [`references/review-lenses.md`](references/review-lenses.md).
+7. Run Claude Code's PR Review Toolkit pass and save the raw output in the bundle.
+8. Launch only the recommended Codex lenses from `lens-hints.json`, then merge all concrete findings from Claude and every lens.
 
 ## Workflow
 
