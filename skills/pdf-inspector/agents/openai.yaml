@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDF Inspector"
+  short_description: "Inspect PDFs and convert them to Markdown locally"
+  default_prompt: "Use $pdf-inspector to inspect this PDF and convert its extractable content to Markdown."
