@@ -1,0 +1,4 @@
+interface:
+  display_name: "First Step CLI"
+  short_description: "First Step Hub CLIの全API操作を安全に実行する"
+  default_prompt: "Use $first-step-cli to inspect the available First Step Hub operations and safely complete this task."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "First Step HTML"
-  short_description: "Publish HTML artifacts securely to First Step Hub"
-  default_prompt: "Use $first-step-html to upload this standalone HTML file and return a time-limited share URL."
