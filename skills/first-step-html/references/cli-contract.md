@@ -26,9 +26,10 @@ first-step html share DOCUMENT_ID --version N
   [--expires-days 1-30] [--reason TEXT] [--origin URL]
 ```
 
-All commands emit one JSON object. Successful upload fields are
-`documentId`, `documentVersion`, and `title`. Successful publish adds
-`shareId`, `shareVersion`, `publicUrl`, and `expiresAt`.
+All commands emit one JSON object. Successful upload fields are `documentId`,
+`documentVersion`, `privateUrl`, and `title`. `privateUrl` opens the
+authenticated Web viewer and does not create public access. Successful publish
+adds `shareId`, `shareVersion`, `publicUrl`, and `expiresAt`.
 
 Errors use:
 

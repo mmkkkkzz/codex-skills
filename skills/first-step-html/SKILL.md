@@ -53,9 +53,11 @@ Confirm the input is one non-empty standalone `.html` file no larger than 50
 MiB. Warn before publishing when it depends on scripts, forms, nested frames,
 downloads, or network resources: the public Viewer intentionally disables them.
 
-Parse the CLI's JSON. Report the document ID/version for an upload. For a
-publish, also report `publicUrl` and `expiresAt`. Never report or search for an
-access token, refresh token, authorization code, PKCE verifier, or upload token.
+Parse the CLI's JSON. Report the document ID/version and authenticated
+`privateUrl` for an upload. Explain that it does not create public access. For
+a publish, also report `publicUrl` and `expiresAt`. Never report or search for
+an access token, refresh token, authorization code, PKCE verifier, or upload
+token.
 
 If publishing fails after upload, read `documentId` and `documentVersion` from
 the structured error details and recover once with:
