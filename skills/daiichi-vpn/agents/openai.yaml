@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daiichi VPN"
+  short_description: "Connect, disconnect, and check the daiichi-ec VPN."
+  default_prompt: "Use $daiichi-vpn to connect, disconnect, or inspect the daiichi-ec VPN on this Mac."
